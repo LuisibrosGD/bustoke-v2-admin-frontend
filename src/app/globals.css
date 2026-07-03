@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss/index.css';
+@import './tw-animate.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #4880FF;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1e3a8a;
+  --color-blue-800: #172554;
+  --color-blue-900: #0f172a;
+
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+
+  --color-bg-primary: var(--color-blue-500);
+  --color-bg-base: #ffffff;
+
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
+
+  --shadow-card: 0px 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0px 8px 30px rgba(0, 0, 0, 0.1);
+  --shadow-elevated: 0px 12px 40px rgba(0, 0, 0, 0.12);
+
+  --color-primary-50: var(--color-blue-50);
+  --color-primary-100: var(--color-blue-100);
+  --color-primary-200: var(--color-blue-200);
+  --color-primary-300: var(--color-blue-300);
+  --color-primary-400: var(--color-blue-400);
+  --color-primary-500: var(--color-blue-500);
+  --color-primary-600: var(--color-blue-600);
+  --color-primary-700: var(--color-blue-700);
+  --color-primary-800: var(--color-blue-800);
+
+  --color-background: #f7f8fa;
+  --color-foreground: var(--color-neutral-900);
+  --color-card: var(--color-bg-base);
+  --color-card-foreground: var(--color-neutral-900);
+  --color-popover: var(--color-bg-base);
+  --color-popover-foreground: var(--color-neutral-900);
+  --color-primary: var(--color-blue-500);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--color-neutral-100);
+  --color-secondary-foreground: var(--color-neutral-900);
+  --color-muted: var(--color-neutral-100);
+  --color-muted-foreground: var(--color-neutral-500);
+  --color-accent: var(--color-neutral-100);
+  --color-accent-foreground: var(--color-neutral-900);
+  --color-destructive: #dc2626;
+  --color-border: #e8eaed;
+  --color-input: #e8eaed;
+  --color-ring: var(--color-blue-500);
+
+  --color-sidebar: var(--color-bg-base);
+  --color-sidebar-foreground: var(--color-neutral-700);
+  --color-sidebar-primary: var(--color-blue-500);
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: #f1f5f9;
+  --color-sidebar-accent-foreground: var(--color-blue-500);
+  --color-sidebar-border: #e8eaed;
+  --color-sidebar-ring: var(--color-blue-500);
+
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+
+  --color-info-50: #eff6ff;
+  --color-info-100: #dbeafe;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    margin: 0;
+  }
+}

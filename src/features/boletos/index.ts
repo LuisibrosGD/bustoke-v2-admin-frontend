@@ -1,0 +1,1 @@
+export { BoletosView } from './components';

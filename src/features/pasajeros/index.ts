@@ -1,0 +1,1 @@
+export { PasajerosView } from './components';
