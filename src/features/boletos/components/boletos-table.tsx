@@ -5,8 +5,8 @@ import { useUserRole } from '@/hooks';
 import { Input, Spinner } from '@/components/ui';
 import { SearchIcon, Ticket } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table/data-table';
-import { boletoRepository, pasajeroRepository, viajeRepository } from '@/infrastructure/repositories';
-import type { Boleto, Pasajero, Viaje } from '@/infrastructure/domain/types';
+import { boletoRepository, pasajeroRepository, rutaRepository, viajeRepository } from '@/infrastructure/repositories';
+import type { Boleto, Pasajero, Ruta, Viaje } from '@/infrastructure/domain/types';
 import { useBoletosColumns } from './boletos-columns';
 import { DataTableEmpty } from '@/components/ui/data-table/data-table-empty';
 
@@ -18,6 +18,7 @@ export function BoletosTable() {
   const [s, setS] = useState('');
   const [pasajeros, setPasajeros] = useState<Pasajero[]>([]);
   const [viajes, setViajes] = useState<Viaje[]>([]);
+  const [rutas, setRutas] = useState<Ruta[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,11 +42,13 @@ export function BoletosTable() {
   useEffect(() => {
     const pasajeroParams = role === 'admin_agencia' && idAgencia ? { id_agencia: idAgencia, limit: '500' } : { limit: '500' };
     const viajeParams = role === 'admin_agencia' && idAgencia ? { id_agencia: idAgencia, limit: '500' } : { limit: '500' };
+    const rutaParams = role === 'admin_agencia' && idAgencia ? { id_agencia: idAgencia, limit: '500' } : { limit: '500' };
     pasajeroRepository.list(pasajeroParams).then(setPasajeros).catch(() => setPasajeros([]));
     viajeRepository.list(viajeParams).then(setViajes).catch(() => setViajes([]));
+    rutaRepository.list(rutaParams).then(setRutas).catch(() => setRutas([]));
   }, [role, idAgencia]);
 
-  const columns = useBoletosColumns(pasajeros, viajes);
+  const columns = useBoletosColumns(pasajeros, viajes, rutas);
 
   const f = useMemo(() => {
     if (!s) return data;

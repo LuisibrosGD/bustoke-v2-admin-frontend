@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui';
-import type { Boleto, Pasajero, Viaje } from '@/infrastructure/domain/types';
+import type { Boleto, Pasajero, Ruta, Viaje } from '@/infrastructure/domain/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -17,9 +17,10 @@ const estadoLabels: Record<string, string> = {
   cancelado: 'Cancelado',
 };
 
-export function useBoletosColumns(pasajeros: Pasajero[], viajes: Viaje[]): ColumnDef<Boleto>[] {
+export function useBoletosColumns(pasajeros: Pasajero[], viajes: Viaje[], rutas: Ruta[]): ColumnDef<Boleto>[] {
   const pasajerosMap = useMemo(() => new Map(pasajeros.map((p) => [p.id, p])), [pasajeros]);
   const viajesMap = useMemo(() => new Map(viajes.map((v) => [v.id, v])), [viajes]);
+  const rutasMap = useMemo(() => new Map(rutas.map((r) => [r.id, r])), [rutas]);
 
   return useMemo(() => [
     {
@@ -41,10 +42,15 @@ export function useBoletosColumns(pasajeros: Pasajero[], viajes: Viaje[]): Colum
       cell: ({ row }) => {
         const v = viajesMap.get(row.original.idViaje);
         if (!v) return row.original.idViaje;
+        const r = rutasMap.get(v.idRuta);
+        const rutaLabel = r ? `${r.terminalOrigenNombre ?? '?'} → ${r.terminalDestinoNombre ?? '?'}` : null;
         return (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-0.5">
+            {rutaLabel && <span className="text-xs font-medium">{rutaLabel}</span>}
             <span className="text-xs text-muted-foreground">
-              {format(new Date(v.fechaHoraSalida), 'dd/MM/yyyy HH:mm', { locale: es })}
+              Sal: {format(new Date(v.fechaHoraSalida), 'dd/MM HH:mm', { locale: es })}
+              {' · '}
+              Lle: {format(new Date(v.fechaHoraLlegada), 'dd/MM HH:mm', { locale: es })}
             </span>
           </div>
         );
@@ -67,5 +73,5 @@ export function useBoletosColumns(pasajeros: Pasajero[], viajes: Viaje[]): Colum
         );
       },
     },
-  ], [pasajerosMap, viajesMap]);
+  ], [pasajerosMap, viajesMap, rutasMap]);
 }
