@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Eye, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Eye } from 'lucide-react';
 import { Badge, Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
 import { manifiestoRepository } from '@/infrastructure/repositories';
 import type { ManifiestoDetalle, ManifiestoSutran } from '@/infrastructure/domain/types';
@@ -13,6 +14,7 @@ const ESTADO_VARIANT: Record<string, 'info' | 'warning' | 'success' | 'danger'> 
 };
 
 export default function ManifiestoSutranPage() {
+  const router = useRouter();
   const [data, setData] = useState<ManifiestoSutran[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -169,6 +171,13 @@ export default function ManifiestoSutranPage() {
                 <pre className="max-h-48 overflow-auto rounded-lg bg-neutral-950 p-4 text-xs text-green-400 whitespace-pre-wrap break-words">
                   {selected.respuestaApi || 'Sin respuesta'}
                 </pre>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2 border-t border-neutral-200">
+                <Button variant="outline" onClick={() => setSelected(null)}>Cerrar</Button>
+                <Button onClick={() => { setSelected(null); router.push(`/viajes/${selected.idViaje}`); }}>
+                  Ir al viaje
+                </Button>
               </div>
             </div>
           ) : null}
