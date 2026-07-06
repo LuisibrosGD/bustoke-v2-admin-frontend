@@ -40,12 +40,11 @@ export function BoletosTable() {
   }, [role, idAgencia]);
 
   useEffect(() => {
-    const pasajeroParams = role === 'admin_agencia' && idAgencia ? { id_agencia: idAgencia, limit: '500' } : { limit: '500' };
-    const viajeParams = role === 'admin_agencia' && idAgencia ? { id_agencia: idAgencia, limit: '500' } : { limit: '500' };
-    const rutaParams = role === 'admin_agencia' && idAgencia ? { id_agencia: idAgencia, limit: '500' } : { limit: '500' };
-    pasajeroRepository.list(pasajeroParams).then(setPasajeros).catch(() => setPasajeros([]));
-    viajeRepository.list(viajeParams).then(setViajes).catch(() => setViajes([]));
-    rutaRepository.list(rutaParams).then(setRutas).catch(() => setRutas([]));
+    const base: Record<string, string> = { limit: '500' };
+    if (role === 'admin_agencia' && idAgencia) base.id_agencia = idAgencia;
+    pasajeroRepository.list(base).then(setPasajeros).catch(() => setPasajeros([]));
+    viajeRepository.list(base).then(setViajes).catch(() => setViajes([]));
+    rutaRepository.list(base).then(setRutas).catch(() => setRutas([]));
   }, [role, idAgencia]);
 
   const columns = useBoletosColumns(pasajeros, viajes, rutas);
