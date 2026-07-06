@@ -52,7 +52,11 @@ export default async function ReportDetailPage({
   const isSuperAdmin = role === 'superadmin';
 
   const query = parseReportQuery(resolvedSearchParams);
-  const data = await getReportAction(slug, query);
+
+  const hasFilters = [query.from, query.to, query.agenciaId, query.rutaId, query.busId, query.viajeId,
+    query.estadoViaje, query.estadoPago, query.metodoPago, query.canalVenta].some(Boolean);
+
+  const data = hasFilters ? await getReportAction(slug, query) : null;
   const title = getReportTitle(report);
 
   return (
