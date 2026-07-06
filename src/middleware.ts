@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { PATHS } from '@/lib/constants/paths';
@@ -15,7 +15,7 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret: ENV_NEXTAUTH_SECRET });
   const isAuth = hasActiveSession(token);
 
-  // ── API proxy: fetch backend directly with Bearer token ───────────
+  // â”€â”€ API proxy: fetch backend directly with Bearer token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (req.nextUrl.pathname.startsWith('/api/admin/')) {
     if (!isAuth || !token?.accessToken) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -23,7 +23,7 @@ export async function middleware(req: NextRequest) {
     const backendUrl = process.env.NEXT_PUBLIC_URL_API;
     if (!backendUrl) {
       return NextResponse.json(
-        { error: 'NEXT_PUBLIC_URL_API no está configurado en el servidor' },
+        { error: 'NEXT_PUBLIC_URL_API no estÃ¡ configurado en el servidor' },
         { status: 500 }
       );
     }
@@ -44,14 +44,14 @@ export async function middleware(req: NextRequest) {
       const resBody = await backendRes.text();
       return new NextResponse(resBody, {
         status: backendRes.status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
       });
     } catch {
       return NextResponse.json({ error: 'Error de conexion con el backend' }, { status: 502 });
     }
   }
 
-  // ── Auth pages (login, recover, etc.) ──────────────────────────────
+  // â”€â”€ Auth pages (login, recover, etc.) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const isAuthPage =
     req.nextUrl.pathname.startsWith(PATHS.signInPage);
 
@@ -62,7 +62,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── Protected pages ───────────────────────────────────────────────
+  // â”€â”€ Protected pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (!isAuth) {
     let from = req.nextUrl.pathname;
     if (req.nextUrl.search) from += req.nextUrl.search;
