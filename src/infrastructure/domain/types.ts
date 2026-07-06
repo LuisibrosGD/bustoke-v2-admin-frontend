@@ -326,6 +326,16 @@ export type ManifiestoSutran = {
   respuestaApi: string;
 };
 
+export type ManifiestoDetalle = ManifiestoSutran & {
+  fechaHoraSalida: string;
+  fechaHoraLlegada: string;
+  viajeEstado: string;
+  rampaEmbarque: string;
+  placaBus: string;
+  rutaOrigen: string;
+  rutaDestino: string;
+};
+
 // --- Historial de Estados de Viaje ---
 
 export type HistorialEstadoViaje = {
