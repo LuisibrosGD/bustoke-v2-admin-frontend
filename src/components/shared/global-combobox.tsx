@@ -50,7 +50,6 @@ export function GlobalCombobox({
         id={id}
         placeholder={placeholder}
         aria-invalid={invalid ? 'true' : 'false'}
-        showClear
         disabled={disabled}
       />
       <ComboboxContent>

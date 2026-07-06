@@ -12,10 +12,10 @@ import {
   REPORT_FILTERS,
   ReportFilterKey,
 } from './report-filter-config';
-import { rutaRepository } from '@/infrastructure/repositories';
+import { busRepository, rutaRepository } from '@/infrastructure/repositories';
 import type { ComboboxOption } from '@/types/common.types';
 
-const MULTI_SELECT_KEYS: ReportFilterKey[] = ['rutaId', 'estadoPago', 'metodoPago', 'canalVenta'];
+const MULTI_SELECT_KEYS: ReportFilterKey[] = ['rutaId', 'busId', 'estadoPago', 'metodoPago', 'canalVenta'];
 
 interface ReportFiltersProps {
   query: ReportQuery;
@@ -26,6 +26,7 @@ interface ReportFiltersProps {
 
 export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId }: ReportFiltersProps) {
   const [rutaOptions, setRutaOptions] = useState<ComboboxOption[]>([]);
+  const [busOptions, setBusOptions] = useState<ComboboxOption[]>([]);
 
   useEffect(() => {
     if (!userAgenciaId) return;
@@ -39,6 +40,17 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
         );
       })
       .catch(() => setRutaOptions([]));
+  }, [userAgenciaId]);
+
+  useEffect(() => {
+    if (!userAgenciaId) return;
+    busRepository.findByAgencia(userAgenciaId)
+      .then((buses) => {
+        setBusOptions(
+          buses.map((b) => ({ value: String(b.id), label: b.placa }))
+        );
+      })
+      .catch(() => setBusOptions([]));
   }, [userAgenciaId]);
 
   const filterKeys = (REPORT_FILTER_KEYS_BY_SLUG[slug] ?? []).filter(
@@ -78,7 +90,9 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
           const filter = REPORT_FILTERS[key];
           const options = key === 'rutaId' && rutaOptions.length > 0
             ? rutaOptions
-            : filter.options;
+            : key === 'busId' && busOptions.length > 0
+            ? busOptions
+            : filter.options ?? [];
           const isMulti = MULTI_SELECT_KEYS.includes(key);
           const currentValue = comboboxValues[key];
 
@@ -91,6 +105,7 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
                 </label>
                 <GlobalComboboxMultiple
                   id={`report-filter-${key}`}
+                  key={key === 'rutaId' ? `rutaId-${rutaOptions.length}` : key === 'busId' ? `busId-${busOptions.length}` : key}
                   items={options}
                   value={arr}
                   onChange={(val) =>
@@ -118,6 +133,7 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
                 <>
                   <GlobalCombobox
                     id={`report-filter-${key}`}
+                    key={key === 'busId' ? `busId-${busOptions.length}` : key}
                     items={options}
                     value={typeof currentValue === 'string' ? currentValue : ''}
                     onChange={(value) =>

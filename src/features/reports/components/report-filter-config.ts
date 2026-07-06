@@ -85,4 +85,5 @@ export const REPORT_FILTER_KEYS_BY_SLUG: Record<string, ReportFilterKey[]> = {
   ventas: ['agenciaId', 'rutaId', 'estadoPago', 'metodoPago', 'canalVenta'],
   viajes: ['agenciaId', 'rutaId', 'busId', 'estadoViaje'],
   'manifiesto-sutran': ['agenciaId', 'rutaId', 'viajeId'],
+  financiero: ['agenciaId'],
 };

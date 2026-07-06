@@ -11,9 +11,9 @@ interface BackendReportResponse {
 
 const COLUMN_TO_KEY: Record<string, Record<string, string>> = {
   ventas: {
-    AGENCIA: 'canal',
-    RUTA: 'canal',
-    'FECHA VIAJE': 'periodo',
+    AGENCIA: 'agencia',
+    RUTA: 'ruta',
+    'FECHA VIAJE': 'fechaViaje',
     PASAJEROS: 'totalBoletos',
     'MONTO TOTAL': 'totalVentas',
     COMISIÓN: 'comision',
@@ -33,6 +33,14 @@ const COLUMN_TO_KEY: Record<string, Record<string, string>> = {
     ORIGEN: 'origen',
     DESTINO: 'destino',
   },
+  financiero: {
+    AGENCIA: 'agencia',
+    PERIODO: 'periodo',
+    'TOTAL VENTAS': 'totalVentas',
+    COMISIÓN: 'comision',
+    'NETO TRANSFERIR': 'netoTransferir',
+    BOLETOS: 'totalBoletos',
+  },
 };
 
 export async function getReportAction(slug: string, query: ReportQuery): Promise<ReportPayload> {
@@ -42,6 +50,9 @@ export async function getReportAction(slug: string, query: ReportQuery): Promise
   if (query.estadoPago) params.estado_pago = query.estadoPago;
   if (query.metodoPago) params.metodo_pago = query.metodoPago;
   if (query.canalVenta) params.canal_venta = query.canalVenta;
+  if (query.busId) params.id_bus = query.busId;
+  if (query.viajeId) params.id_viaje = query.viajeId;
+  if (query.estadoViaje) params.estado_viaje = query.estadoViaje;
   if (query.from) params.fecha_inicio = query.from;
   if (query.to) params.fecha_fin = query.to;
 

@@ -53,6 +53,21 @@ export const REPORTS: ReportDefinition[] = [
       'DESTINO',
     ],
   },
+  {
+    slug: 'financiero',
+    code: 'REPORTE FINANCIERO',
+    title: 'REPORTE FINANCIERO',
+    sourceRow: 1,
+    parameters: ['PERIODO', 'DE', 'HASTA'],
+    columns: [
+      'AGENCIA',
+      'PERIODO',
+      'TOTAL VENTAS',
+      'COMISIÓN',
+      'NETO TRANSFERIR',
+      'BOLETOS',
+    ],
+  },
 ];
 
 export function getReportTitle(report: ReportDefinition): string {

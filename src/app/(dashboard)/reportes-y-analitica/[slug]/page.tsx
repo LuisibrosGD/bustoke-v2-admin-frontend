@@ -61,7 +61,7 @@ export default async function ReportDetailPage({
     fetchQuery.agenciaId = userAgenciaId;
   }
 
-  const shouldFetch = hasFilters || !isSuperAdmin;
+  const shouldFetch = hasFilters;
   const data = shouldFetch ? await getReportAction(slug, fetchQuery) : null;
   const title = getReportTitle(report);
 
