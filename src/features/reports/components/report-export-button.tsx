@@ -1,9 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui';
-import { ENV_URL_API } from '@/lib/constants/environments';
 import { ArrowDownToLineIcon, Loader2Icon } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -45,37 +43,22 @@ async function getErrorMessage(response: Response) {
   }
 }
 
-function getBackendExportUrl(exportHref: string) {
-  const url = new URL(exportHref, window.location.origin);
-  const backendPath = url.pathname.replace(/^\/api/, '') + '/excel';
-
-  return `${ENV_URL_API}${backendPath}${url.search}`;
-}
-
 export function ReportExportButton({
   exportHref,
   fallbackFileName,
 }: ReportExportButtonProps) {
-  const { data: session } = useSession();
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
-    const accessToken = session?.user?.accessToken;
-
-    if (!accessToken) {
-      toast.error('Tu sesión expiró. Vuelve a iniciar sesión.');
-      return;
-    }
-
     setIsDownloading(true);
 
     try {
-      const response = await fetch(getBackendExportUrl(exportHref), {
+      // `exportHref` apunta a nuestra propia API route (/api/reports/[slug]/export),
+      // que reenvía la petición al backend server-side con el token de sesión.
+      // Así el access token nunca queda expuesto en JS del cliente.
+      const response = await fetch(exportHref, {
         method: 'GET',
         cache: 'no-store',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
       });
 
       if (!response.ok) {

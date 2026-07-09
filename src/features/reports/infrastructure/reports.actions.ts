@@ -7,6 +7,9 @@ interface BackendReportResponse {
   slug: string;
   data: Record<string, unknown>[];
   total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 const COLUMN_TO_KEY: Record<string, Record<string, string>> = {
@@ -27,8 +30,8 @@ const COLUMN_TO_KEY: Record<string, Record<string, string>> = {
   },
   'manifiesto-sutran': {
     'N° DOCUMENTO': 'numeroDocumento',
-    NOMBRES: 'pasajero',
-    APELLIDOS: 'pasajero',
+    NOMBRES: 'nombres',
+    APELLIDOS: 'apellidos',
     ASIENTO: 'asiento',
     ORIGEN: 'origen',
     DESTINO: 'destino',
@@ -55,12 +58,14 @@ export async function getReportAction(slug: string, query: ReportQuery): Promise
   if (query.estadoViaje) params.estado_viaje = query.estadoViaje;
   if (query.from) params.fecha_inicio = query.from;
   if (query.to) params.fecha_fin = query.to;
+  params.page = query.page ?? '1';
+  params.limit = query.limit ?? '30';
 
   const response = await serverHttpClient.get<BackendReportResponse>(reportEndpoints.list(slug), {
     params,
   });
 
-  const { data: rawData, total } = response.data;
+  const { data: rawData, total, page, limit, totalPages } = response.data;
   const reportDef = getReportBySlug(slug);
   const keyMap = COLUMN_TO_KEY[slug] ?? {};
   const columns = reportDef?.columns ?? [];
@@ -87,12 +92,12 @@ export async function getReportAction(slug: string, query: ReportQuery): Promise
     },
     rows,
     meta: {
-      page: 1,
-      limit: total || 30,
+      page,
+      limit,
       totalItems: total,
-      totalPages: 1,
-      hasPrevPage: false,
-      hasNextPage: false,
+      totalPages,
+      hasPrevPage: page > 1,
+      hasNextPage: page < totalPages,
     },
   };
 }
