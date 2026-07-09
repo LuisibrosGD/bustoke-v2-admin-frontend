@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useUserRole } from '@/hooks';
 import {
@@ -53,9 +54,9 @@ export function AppSidebar() {
       <SidebarHeader className="h-16 border-b border-sidebar-border flex items-center p-2">
         <Link href="/dashboard" className="flex items-center justify-center w-full mt-2">
           {open ? (
-            <img src="/icons/bustokelogocompleto.svg" alt="Bustoke" className="h-6 w-auto" />
+            <Image src="/icons/bustokelogocompleto.svg" alt="Bustoke" width={168} height={18} className="h-6 w-auto" priority />
           ) : (
-            <img src="/icons/bustokelogoletra.svg" alt="B" className="size-9" />
+            <Image src="/svg/bustoke-isotipo.svg" alt="B" width={42} height={48} className="size-9" priority />
           )}
         </Link>
       </SidebarHeader>
