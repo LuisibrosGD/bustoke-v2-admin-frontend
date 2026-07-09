@@ -25,13 +25,13 @@ export function RutaTableLevel({
   const { data, isLoading, error } = useRutas({ idAgencia: agencyId });
 
   const filtered = useMemo(() => {
-    const byAgency = data.filter((r) => r.idAgencia === agencyId);
+    const byAgency = data.filter((r) => String(r.idAgencia) === agencyId);
     if (!search) return byAgency;
     const lower = search.toLowerCase();
     return byAgency.filter(
       (r) =>
-        r.idTerminalOrigen.toLowerCase().includes(lower) ||
-        r.idTerminalDestino.toLowerCase().includes(lower)
+        String(r.idTerminalOrigen).toLowerCase().includes(lower) ||
+        String(r.idTerminalDestino).toLowerCase().includes(lower)
     );
   }, [search, agencyId, data]);
 

@@ -20,7 +20,6 @@ export function ViajesTable({ onEdit, onDelete }: Props) {
   const [rutas, setRutas] = useState<Ruta[]>([]);
   const [buses, setBuses] = useState<Bus[]>([]);
   const [terminales, setTerminales] = useState<Terminal[]>([]);
-  const [lookupLoaded, setLookupLoaded] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -31,8 +30,7 @@ export function ViajesTable({ onEdit, onDelete }: Props) {
       setRutas(r);
       setBuses(b);
       setTerminales(t);
-      setLookupLoaded(true);
-    }).catch(() => setLookupLoaded(true));
+    }).catch(() => {});
   }, []);
 
   const viajesColumns = useViajesColumns(rutas, buses, terminales);
@@ -40,7 +38,7 @@ export function ViajesTable({ onEdit, onDelete }: Props) {
   const filtered = useMemo(() => {
     if (!search || !data) return data;
     const l = search.toLowerCase();
-    return data.filter((v) => v.fechaHoraSalida.includes(l) || v.idRuta.toLowerCase().includes(l) || v.estado.includes(l));
+    return data.filter((v) => v.fechaHoraSalida.includes(l) || String(v.idRuta).toLowerCase().includes(l) || v.estado.includes(l));
   }, [search, data]);
 
   const columnsWithActions = useMemo(() => [

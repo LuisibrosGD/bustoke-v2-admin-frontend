@@ -41,7 +41,7 @@ export function ViajeTableLevel({
   const busesMap = useMemo(() => new Map(buses.map((b) => [b.id, b])), [buses]);
 
   const filtered = useMemo(() => {
-    const byRuta = data.filter((v) => v.idRuta === rutaId);
+    const byRuta = data.filter((v) => String(v.idRuta) === rutaId);
     if (!search) return byRuta;
     const lower = search.toLowerCase();
     return byRuta.filter(

@@ -23,7 +23,7 @@ export function SoporteTable({ data, onRefresh }: Props) {
   const f = useMemo(() => {
     if (!s) return data;
     const l = s.toLowerCase();
-    return data.filter((t) => t.asunto.toLowerCase().includes(l) || t.idAgencia.includes(l));
+    return data.filter((t) => t.asunto.toLowerCase().includes(l) || String(t.idAgencia).includes(l));
   }, [data, s]);
 
   const handleDelete = async (id: string) => {
