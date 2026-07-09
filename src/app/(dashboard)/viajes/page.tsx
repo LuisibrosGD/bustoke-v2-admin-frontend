@@ -17,6 +17,7 @@ import {
 import { PlusIcon } from 'lucide-react';
 import { viajeRepository } from '@/infrastructure/repositories';
 import type { Viaje } from '@/infrastructure/domain/types';
+import { toast } from 'sonner';
 
 export default function ViajesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -47,7 +48,7 @@ export default function ViajesPage() {
       setDeleteOpen(false);
       setRefreshKey((k) => k + 1);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al eliminar viaje');
+      toast.error(err instanceof Error ? err.message : 'Error al eliminar viaje');
     }
   }, [deletingViaje]);
 
