@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Estáticos: tipos, lint y dependencias vulnerables ──────────────────
+  # Rápidos y sin dependencias externas: corren siempre, en todo push/PR.
+  static-checks:
+    name: Typecheck, lint & audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Type check (tsc)
+        run: npx tsc --noEmit
+
+      - name: Lint (eslint)
+        run: npx eslint .
+
+      - name: Auditoría de dependencias (SEC-05)
+        # No rompe el build por vulnerabilidades moderadas ya conocidas y
+        # aceptadas (ver docs/pruebas/analisis-riesgos-seguridad.md, SEC-05).
+        # Si aparece una nueva vulnerabilidad ALTA o CRÍTICA, el pipeline falla.
+        run: npm audit --audit-level=high
+
+  # ── Build de producción ─────────────────────────────────────────────────
+  build:
+    name: Build (next build)
+    runs-on: ubuntu-latest
+    needs: static-checks
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXTAUTH_SECRET: ci-placeholder-secret-not-used-at-runtime
+          NEXTAUTH_URL: http://localhost:3000
+          NEXT_PUBLIC_URL_API: http://localhost:5000
+          JWT_SECRET_API: ci-placeholder-not-used-at-runtime
+
+  # ── E2E (Playwright) contra un backend real ─────────────────────────────
+  # Requiere que el repo tenga configurados los Secrets:
+  #   E2E_BASE_URL, E2E_SUPERADMIN_EMAIL, E2E_SUPERADMIN_PASSWORD,
+  #   E2E_AGENCIA_ADMIN_EMAIL, E2E_AGENCIA_ADMIN_PASSWORD
+  # apuntando a un ambiente de staging con backend + base de datos de prueba
+  # accesibles desde GitHub Actions. Sin esos secrets, este job se omite
+  # (no rompe el pipeline) — ver docs/pruebas/plan-de-pruebas.md §6.
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: static-checks
+    if: ${{ vars.E2E_ENABLED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar navegadores de Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Ejecutar suite E2E
+        run: npx playwright test --project=setup --project=chromium
+        env:
+          E2E_SKIP_WEBSERVER: '1'
+          E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+          E2E_SUPERADMIN_EMAIL: ${{ secrets.E2E_SUPERADMIN_EMAIL }}
+          E2E_SUPERADMIN_PASSWORD: ${{ secrets.E2E_SUPERADMIN_PASSWORD }}
+          E2E_AGENCIA_ADMIN_EMAIL: ${{ secrets.E2E_AGENCIA_ADMIN_EMAIL }}
+          E2E_AGENCIA_ADMIN_PASSWORD: ${{ secrets.E2E_AGENCIA_ADMIN_PASSWORD }}
+
+      - name: Subir reporte HTML de Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
