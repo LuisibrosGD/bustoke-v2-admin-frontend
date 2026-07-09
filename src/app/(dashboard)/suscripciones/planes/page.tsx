@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check, Bus } from 'lucide-react';
-import { Badge, Button, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
+import { Button, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
 import { planRepository } from '@/infrastructure/repositories';
 import type { Plan } from '@/infrastructure/domain/types';
 

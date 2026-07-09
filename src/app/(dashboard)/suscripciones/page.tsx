@@ -17,9 +17,8 @@ export default function SuscripcionesPage() {
 
   useEffect(() => {
     const params = idAgencia ? { id_agencia: idAgencia } : undefined;
-    setIsLoading(true);
     suscripcionRepository.list(params)
-      .then(setData)
+      .then((d) => { setData(d); setError(null); })
       .catch((e) => setError(e instanceof Error ? e.message : 'Error'))
       .finally(() => setIsLoading(false));
   }, [idAgencia]);

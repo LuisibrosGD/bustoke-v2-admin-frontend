@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button/button';
 import { Skeleton } from '@/components/ui';
 import { ArrowLeft, Calendar, Users, Bus as BusIcon, Route, Ticket, ClipboardCheck, Armchair, FileSpreadsheet, ArrowRight } from 'lucide-react';
 import { viajeRepository, rutaRepository, busRepository, boletoRepository, terminalRepository } from '@/infrastructure/repositories';
-import type { Viaje, Ruta, Bus, Terminal } from '@/infrastructure/domain/types';
+import type { Viaje, Bus, Terminal } from '@/infrastructure/domain/types';
 
 const estadoBadgeVariant: Record<string, 'info' | 'warning' | 'success' | 'danger'> = {
   programado: 'info',
@@ -36,7 +36,6 @@ function InfoRow({ label, value }: { label: string; value: string | React.ReactN
 export default function ViajeDetailPage() {
   const params = useParams<{ id: string }>();
   const [viaje, setViaje] = useState<Viaje | null>(null);
-  const [ruta, setRuta] = useState<Ruta | null>(null);
   const [bus, setBus] = useState<Bus | null>(null);
   const [terminalOrigen, setTerminalOrigen] = useState<Terminal | null>(null);
   const [terminalDestino, setTerminalDestino] = useState<Terminal | null>(null);
@@ -56,7 +55,6 @@ export default function ViajeDetailPage() {
         ]);
         setTotalBoletos(boletos.length);
         if (r) {
-          setRuta(r);
           const [tO, tD] = await Promise.all([
             terminalRepository.getById(r.idTerminalOrigen),
             terminalRepository.getById(r.idTerminalDestino),

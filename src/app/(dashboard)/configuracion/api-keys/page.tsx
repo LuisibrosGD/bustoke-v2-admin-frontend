@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUserRole } from '@/hooks';
 import {
   Badge, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -23,19 +23,19 @@ export default function ApiKeysPage() {
 
   const { role, idAgencia, isSuperadmin, isLoading: sessionLoading } = useUserRole();
 
-  function fetch() {
+  const loadApiKeys = useCallback(() => {
     setLoading(true);
     const params = role === 'admin_agencia' && idAgencia ? { id_agencia: idAgencia } : undefined;
     apiKeyRepository.list(params)
       .then(setData)
       .catch((e) => setError(e instanceof Error ? e.message : 'Error al cargar'))
       .finally(() => setLoading(false));
-  }
+  }, [role, idAgencia]);
 
   useEffect(() => {
     if (sessionLoading) return;
-    fetch();
-  }, [sessionLoading, role, idAgencia]);
+    loadApiKeys();
+  }, [sessionLoading, loadApiKeys]);
 
   useEffect(() => {
     if (!isSuperadmin || !dialogOpen) return;
@@ -50,7 +50,7 @@ export default function ApiKeysPage() {
   async function handleDelete(id: string) {
     if (!confirm('¿Eliminar esta API Key?')) return;
     await apiKeyRepository.delete(id);
-    fetch();
+    loadApiKeys();
   }
 
   async function handleCreate() {
@@ -63,7 +63,7 @@ export default function ApiKeysPage() {
       };
       const created = await apiKeyRepository.create(payload);
       setCreatedToken(created.token);
-      fetch();
+      loadApiKeys();
     } catch (e) {
       console.error(e);
       alert(e instanceof Error ? e.message : 'Error al crear');

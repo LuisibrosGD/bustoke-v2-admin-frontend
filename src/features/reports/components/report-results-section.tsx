@@ -19,7 +19,7 @@ export function ReportResultsSection({
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <h2 className="text-base font-semibold text-muted-foreground">Selecciona filtros</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Usa los filtros de arriba y haz clic en "Aplicar filtros" para ver los resultados.
+            Usa los filtros de arriba y haz clic en &quot;Aplicar filtros&quot; para ver los resultados.
           </p>
         </div>
       </section>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useUserRole } from '@/hooks';
 import { ReclamosTable } from '@/features/reclamos/components';
 import { reclamoRepository } from '@/infrastructure/repositories';
@@ -13,16 +13,20 @@ export default function ReclamosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  function load() {
-    setIsLoading(true);
+  const fetchData = useCallback(() => {
     const params = role === 'admin_agencia' && idAgencia ? { id_agencia: idAgencia } : undefined;
-    reclamoRepository.list(params)
-      .then(setData)
+    return reclamoRepository.list(params)
+      .then((d) => { setData(d); setError(null); })
       .catch((e) => setError(e instanceof Error ? e.message : 'Error al cargar'))
       .finally(() => setIsLoading(false));
-  }
+  }, [role, idAgencia]);
 
-  useEffect(() => { load(); }, [role, idAgencia]);
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  function load() {
+    setIsLoading(true);
+    fetchData();
+  }
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Cargando reclamos...</div>;
   if (error) return <div className="p-6 text-red-500">Error: {error}</div>;

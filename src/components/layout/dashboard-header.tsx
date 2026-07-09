@@ -21,7 +21,11 @@ export function DashboardHeader() {
     } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => { cargar(); const id = setInterval(cargar, 30000); return () => clearInterval(id); }, [cargar]);
+  useEffect(() => {
+    const initial = setTimeout(cargar, 0);
+    const id = setInterval(cargar, 30000);
+    return () => { clearTimeout(initial); clearInterval(id); };
+  }, [cargar]);
 
   async function abrirPanel() {
     setOpenPanel((p) => !p);

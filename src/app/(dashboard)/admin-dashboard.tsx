@@ -57,28 +57,24 @@ const activityBadgeMap: Record<string, 'success' | 'info' | 'warning'> = {
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const token = session?.user?.accessToken;
+  const loading = status === 'loading' || (!!token && isFetching);
 
   useEffect(() => {
-    if (status === 'loading') return;
-    const token = session?.user?.accessToken;
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    setError(null);
+    if (!token) return;
     fetch('/api/admin/dashboard/', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
-      .then(setData)
+      .then((d) => { setData(d); setError(null); })
       .catch((e) => {
         setData(null);
         setError(e instanceof Error ? e.message : 'Error desconocido');
       })
-      .finally(() => setLoading(false));
-  }, [session, status]);
+      .finally(() => setIsFetching(false));
+  }, [token]);
 
   if (loading) {
     return (

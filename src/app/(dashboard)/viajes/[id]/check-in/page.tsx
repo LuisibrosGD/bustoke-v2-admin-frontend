@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button/button';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog/dialog';
 import { viajeRepository, rutaRepository, boletoRepository, pasajeroRepository, asientoRepository, terminalRepository } from '@/infrastructure/repositories';
-import type { Viaje, Boleto } from '@/infrastructure/domain/types';
+import type { Viaje } from '@/infrastructure/domain/types';
 
 type CheckInStatus = 'pendiente' | 'abordado' | 'no_show';
 
