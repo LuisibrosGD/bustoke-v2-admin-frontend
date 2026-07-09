@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { FileSpreadsheet, Download, Printer } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Badge } from '@/components/ui/badge/badge';
 import { Button } from '@/components/ui/button/button';
 import { Skeleton } from '@/components/ui';
 import { viajeRepository, rutaRepository, busRepository, terminalRepository, boletoRepository, pasajeroRepository, asientoRepository, agenciaRepository } from '@/infrastructure/repositories';
-import type { Agencia, Viaje, Ruta, Bus, Terminal } from '@/infrastructure/domain/types';
+import type { Agencia, Viaje, Bus, Terminal } from '@/infrastructure/domain/types';
 
 const estadoViajeVariant: Record<string, 'info' | 'warning' | 'success' | 'danger'> = {
   programado: 'info',
@@ -26,7 +28,6 @@ const estadoViajeLabel: Record<string, string> = {
 export default function ManifiestoViajePage() {
   const params = useParams<{ id: string }>();
   const [viaje, setViaje] = useState<Viaje | null>(null);
-  const [ruta, setRuta] = useState<Ruta | null>(null);
   const [bus, setBus] = useState<Bus | null>(null);
   const [terminalOrigen, setTerminalOrigen] = useState<Terminal | null>(null);
   const [terminalDestino, setTerminalDestino] = useState<Terminal | null>(null);
@@ -40,13 +41,13 @@ export default function ManifiestoViajePage() {
         const v = await viajeRepository.getById(params.id);
         if (!v) { setLoading(false); return; }
         setViaje(v);
-        const [r, b, boletos, asientos] = await Promise.all([
+        const [r, b, boletos, asientos, pasajerosDelViaje] = await Promise.all([
           rutaRepository.getById(v.idRuta),
           busRepository.getById(v.idBus),
           boletoRepository.getByViaje(v.id),
           asientoRepository.listByBus(v.idBus),
+          pasajeroRepository.getByViaje(v.id),
         ]);
-        if (r) setRuta(r);
         if (b) {
           setBus(b);
           agenciaRepository.getById(b.idAgencia).then(setAgencia).catch(() => setAgencia(null));
@@ -60,13 +61,7 @@ export default function ManifiestoViajePage() {
           if (tD) setTerminalDestino(tD);
         }
         const aMap = new Map(asientos.map((a) => [a.id, a]));
-        const pMap = new Map<string, { nombres: string; apellidoPaterno: string; apellidoMaterno: string; numeroDocumento: string }>();
-        await Promise.all(boletos.map(async (boleto) => {
-          try {
-            const p = await pasajeroRepository.getById(boleto.idPasajero);
-            if (p) pMap.set(boleto.idPasajero, p);
-          } catch {}
-        }));
+        const pMap = new Map(pasajerosDelViaje.map((p) => [p.id, p]));
         setPasajerosManifiesto(boletos.map((boleto, idx) => {
           const p = pMap.get(boleto.idPasajero);
           const a = aMap.get(boleto.idAsiento);
@@ -90,6 +85,37 @@ export default function ManifiestoViajePage() {
   const fechaHoraSalida = viaje ? new Date(viaje.fechaHoraSalida).toLocaleString('es-PE') : '';
   const fechaHoraLlegada = viaje ? new Date(viaje.fechaHoraLlegada).toLocaleString('es-PE') : '';
 
+  const handleExportPdf = () => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(14);
+    doc.text('Manifiesto de Pasajeros', 14, 16);
+
+    doc.setFontSize(9);
+    const info = [
+      [`Empresa: ${agencia?.razonSocial ?? '—'}`, `RUC: ${agencia?.ruc ?? '—'}`],
+      [`Ruta: ${terminalOrigen?.nombre ?? '—'} → ${terminalDestino?.nombre ?? '—'}`, `Bus: ${bus?.placa ?? '—'}`],
+      [`Fecha/Hora salida: ${fechaHoraSalida}`, `Llegada estimada: ${fechaHoraLlegada}`],
+      [`Rampa: ${viaje?.rampaEmbarque ?? '—'}`, `Estado: ${estadoViajeLabel[viaje?.estado ?? ''] ?? '—'}`],
+    ];
+    let y = 24;
+    info.forEach(([left, right]) => {
+      doc.text(left, 14, y);
+      doc.text(right, 110, y);
+      y += 6;
+    });
+
+    autoTable(doc, {
+      startY: y + 2,
+      head: [['N°', 'Pasajero', 'Documento', 'Asiento', 'Tipo', 'Boleto']],
+      body: pasajerosManifiesto.map((p) => [p.item, p.nombres, p.documento, p.asiento, p.tipoAsiento, p.boleto]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    doc.save(`manifiesto-viaje-${params.id}.pdf`);
+  };
+
   return (
     <>
       <style>{`
@@ -111,7 +137,7 @@ export default function ManifiestoViajePage() {
               <Printer className="size-4 mr-1.5" />
               Imprimir
             </Button>
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Button variant="outline" size="sm" onClick={handleExportPdf}>
               <Download className="size-4 mr-1.5" />
               Exportar PDF
             </Button>
