@@ -63,13 +63,14 @@ jobs:
           NEXT_PUBLIC_URL_API: http://localhost:5000
           JWT_SECRET_API: ci-placeholder-not-used-at-runtime
 
-  # ── E2E (Playwright) contra un backend real ─────────────────────────────
-  # Requiere que el repo tenga configurados los Secrets:
-  #   E2E_BASE_URL, E2E_SUPERADMIN_EMAIL, E2E_SUPERADMIN_PASSWORD,
-  #   E2E_AGENCIA_ADMIN_EMAIL, E2E_AGENCIA_ADMIN_PASSWORD
-  # apuntando a un ambiente de staging con backend + base de datos de prueba
-  # accesibles desde GitHub Actions. Sin esos secrets, este job se omite
-  # (no rompe el pipeline) — ver docs/pruebas/plan-de-pruebas.md §6.
+  # ── E2E (Playwright) contra el backend real (Render) ────────────────────
+  # El frontend corre efímero dentro del runner (igual que `npm run dev`
+  # localmente) y apunta al backend público en Render vía NEXT_PUBLIC_URL_API.
+  # Requiere las Variables NEXT_PUBLIC_URL_API y E2E_ENABLED=true, y los
+  # Secrets E2E_SUPERADMIN_EMAIL, E2E_SUPERADMIN_PASSWORD,
+  # E2E_AGENCIA_ADMIN_EMAIL, E2E_AGENCIA_ADMIN_PASSWORD (Settings → Secrets
+  # and variables → Actions). Sin E2E_ENABLED=true, este job se omite y no
+  # rompe el pipeline — ver docs/pruebas/plan-de-pruebas.md §7.
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
@@ -89,11 +90,21 @@ jobs:
       - name: Instalar navegadores de Playwright
         run: npx playwright install --with-deps chromium
 
+      - name: Despertar el backend (Render free tier duerme tras inactividad)
+        run: |
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "${{ vars.NEXT_PUBLIC_URL_API }}/docs" || echo "000")
+            if [ "$code" != "000" ]; then echo "Backend responde (HTTP $code)"; break; fi
+            echo "Esperando al backend... intento $i/12"; sleep 10
+          done
+
       - name: Ejecutar suite E2E
         run: npx playwright test --project=setup --project=chromium
         env:
-          E2E_SKIP_WEBSERVER: '1'
-          E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+          NEXT_PUBLIC_URL_API: ${{ vars.NEXT_PUBLIC_URL_API }}
+          NEXTAUTH_URL: http://localhost:3000
+          NEXTAUTH_SECRET: ci-ephemeral-secret-solo-para-esta-corrida
+          E2E_BASE_URL: http://localhost:3000
           E2E_SUPERADMIN_EMAIL: ${{ secrets.E2E_SUPERADMIN_EMAIL }}
           E2E_SUPERADMIN_PASSWORD: ${{ secrets.E2E_SUPERADMIN_PASSWORD }}
           E2E_AGENCIA_ADMIN_EMAIL: ${{ secrets.E2E_AGENCIA_ADMIN_EMAIL }}
