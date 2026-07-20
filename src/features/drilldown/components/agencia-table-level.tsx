@@ -23,6 +23,7 @@ import { SearchIcon, XIcon, ArrowRight, Pencil, Eye, Plus } from 'lucide-react';
 import { agenciaRepository } from '@/infrastructure/repositories';
 import type { Agencia } from '@/infrastructure/domain/types';
 import type { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'sonner';
 
 const estadoVariant: Record<string, 'success' | 'danger' | 'warning' | 'neutral'> = {
   activa: 'success',
@@ -49,7 +50,7 @@ export function AgenciaTableLevel() {
       setRazonSocial('');
       refetch();
     } catch (e) {
-      console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Error al crear la agencia');
     } finally {
       setSubmitting(false);
     }

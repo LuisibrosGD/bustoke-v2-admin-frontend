@@ -79,7 +79,11 @@ export function FlotaTable({ onDelete }: Props) {
           </div>
           {search && <Button variant="ghost" size="sm" onClick={() => setSearch('')}><XIcon className="size-4 mr-1" /> Limpiar</Button>}
         </div>
-        <DataTable columns={columnsWithActions} data={filtered} />
+        <DataTable
+          columns={columnsWithActions}
+          data={filtered}
+          emptyElement={<DataTableEmpty title="Sin resultados" description="No se encontraron buses." />}
+        />
       </div>
 
     </>

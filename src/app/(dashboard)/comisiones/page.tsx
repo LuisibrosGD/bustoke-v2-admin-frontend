@@ -6,6 +6,7 @@ import { DollarSign, Clock, TrendingUp, CheckCircle } from 'lucide-react';
 import { agenciaRepository, liquidacionRepository } from '@/infrastructure/repositories';
 import type { Agencia, Liquidacion } from '@/infrastructure/domain/types';
 import { useUserRole } from '@/hooks';
+import { toast } from 'sonner';
 
 const ESTADO_VARIANT: Record<string, 'warning' | 'success' | 'danger' | 'neutral'> = {
   pendiente: 'warning',
@@ -35,7 +36,7 @@ export default function ComisionesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const agenciasMap = useMemo(() => new Map(agencias.map((a) => [a.id, a])), [agencias]);
+  const agenciasMap = useMemo(() => new Map(agencias.map((a) => [String(a.id), a])), [agencias]);
 
   async function marcarTransferido(id: string) {
     setUpdating(id);
@@ -43,7 +44,7 @@ export default function ComisionesPage() {
       const updated = await liquidacionRepository.update(id, { estadoPago: 'completado' });
       setData((prev) => prev.map((l) => l.id === id ? { ...l, estadoPago: updated.estadoPago } : l));
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Error al actualizar');
+      toast.error(e instanceof Error ? e.message : 'Error al actualizar');
     } finally {
       setUpdating(null);
     }
