@@ -7,9 +7,9 @@ import Link from 'next/link';
 export default function ReportsPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="mt-2 text-3xl font-semibold">Reporte y Analítica</h1>
-        <p className="mt-2 max-w-2xl text-muted-foreground">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-6">
+        <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Reportes y Analítica</h1>
+        <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground leading-relaxed">
           Reportes generados desde la plataforma Bustoke.
         </p>
       </div>
