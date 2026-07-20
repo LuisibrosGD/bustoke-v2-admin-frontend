@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useUserRole } from '@/hooks';
+import { useUserRole, useClientPagination } from '@/hooks';
 import { Input, Spinner } from '@/components/ui';
 import { SearchIcon, User } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTablePagination } from '@/components/ui/data-table/data-table-pagination';
 import { pasajeroRepository } from '@/infrastructure/repositories';
 import type { Pasajero } from '@/infrastructure/domain/types';
 import { pasajerosColumns } from './pasajeros-columns';
@@ -27,7 +28,8 @@ export function PasajerosTable({ viajeId }: { viajeId?: string }) {
         if (viajeId) {
           result = await pasajeroRepository.getByViaje(viajeId);
         } else {
-          const params = role === 'admin_agencia' && idAgencia ? { id_agencia: idAgencia } : undefined;
+          const params: Record<string, string> = { limit: '500' };
+          if (role === 'admin_agencia' && idAgencia) params.id_agencia = idAgencia;
           result = await pasajeroRepository.list(params);
         }
         if (!cancelled) setData(result);
@@ -52,6 +54,8 @@ export function PasajerosTable({ viajeId }: { viajeId?: string }) {
     );
   }, [data, s]);
 
+  const pagination = useClientPagination(f, 15);
+
   if (error) {
     return <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">Error: {error}</div>;
   }
@@ -68,11 +72,11 @@ export function PasajerosTable({ viajeId }: { viajeId?: string }) {
     <div className="space-y-4">
       <div className="relative max-w-sm">
         <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Buscar pasajero..." className="pl-9" value={s} onChange={(e) => setS(e.target.value)} />
+        <Input placeholder="Buscar pasajero..." className="pl-9" value={s} onChange={(e) => { setS(e.target.value); pagination.resetPage(); }} />
       </div>
       <DataTable
         columns={pasajerosColumns}
-        data={f}
+        data={pagination.pageItems}
         emptyElement={
           <DataTableEmpty
             icon={<User className="size-8 text-muted-foreground" />}
@@ -81,6 +85,22 @@ export function PasajerosTable({ viajeId }: { viajeId?: string }) {
           />
         }
       />
+      {pagination.totalItems > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground text-center sm:text-left">
+            Mostrando {pagination.pageItems.length} de {pagination.totalItems} pasajeros
+          </p>
+          {pagination.totalPages > 1 && (
+            <DataTablePagination
+              pageIndex={pagination.pageIndex}
+              totalPages={pagination.totalPages}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+              onPageChange={pagination.goToPage}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
