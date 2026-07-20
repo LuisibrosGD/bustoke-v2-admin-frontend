@@ -2,12 +2,17 @@
 
 import { useMemo, useState } from 'react';
 import { useUserRole } from '@/hooks';
-import { Input, Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, Label } from '@/components/ui';
+import {
+  Input, Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, Label,
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
+} from '@/components/ui';
 import { SearchIcon, Plus } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableEmpty } from '@/components/ui/data-table/data-table-empty';
 import { useSoporteColumns } from './soporte-columns';
 import { soporteRepository } from '@/infrastructure/repositories';
 import type { TicketSoporte } from '@/infrastructure/domain/types';
+import { toast } from 'sonner';
 
 interface Props { data: TicketSoporte[]; onRefresh: () => void }
 
@@ -19,6 +24,8 @@ export function SoporteTable({ data, onRefresh }: Props) {
   const [asunto, setAsunto] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const f = useMemo(() => {
     if (!s) return data;
@@ -26,13 +33,19 @@ export function SoporteTable({ data, onRefresh }: Props) {
     return data.filter((t) => t.asunto.toLowerCase().includes(l) || String(t.idAgencia).includes(l));
   }, [data, s]);
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Eliminar este ticket de soporte?')) return;
+  const handleDeleteRequest = (id: string) => setDeletingId(id);
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingId) return;
+    setDeleting(true);
     try {
-      await soporteRepository.delete(id);
+      await soporteRepository.delete(deletingId);
+      setDeletingId(null);
       onRefresh();
     } catch (e) {
-      console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Error al eliminar el ticket');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -50,13 +63,13 @@ export function SoporteTable({ data, onRefresh }: Props) {
       setDescripcion('');
       onRefresh();
     } catch (e) {
-      console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Error al crear el ticket');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const columns = useSoporteColumns({ isSuperadmin, onDelete: handleDelete, onRefresh });
+  const columns = useSoporteColumns({ isSuperadmin, onDelete: handleDeleteRequest, onRefresh });
 
   return (
     <div className="space-y-4">
@@ -70,7 +83,11 @@ export function SoporteTable({ data, onRefresh }: Props) {
           Nuevo ticket
         </Button>
       </div>
-      <DataTable columns={columns} data={f} />
+      <DataTable
+        columns={columns}
+        data={f}
+        emptyElement={<DataTableEmpty title="Sin resultados" description="No se encontraron tickets de soporte." />}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -101,6 +118,23 @@ export function SoporteTable({ data, onRefresh }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar ticket de soporte?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={deleting} className="bg-red-600 hover:bg-red-700">
+              {deleting ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

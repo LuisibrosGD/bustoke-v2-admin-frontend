@@ -28,10 +28,10 @@ export default function SuscripcionesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold">Suscripciones</h1>
-          <p className="mt-2 text-muted-foreground">
+          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Suscripciones</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
             Planes SaaS contratados por las agencias.
           </p>
         </div>

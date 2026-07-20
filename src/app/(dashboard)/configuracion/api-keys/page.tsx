@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUserRole } from '@/hooks';
 import {
   Badge, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, Input, Label,
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
 } from '@/components/ui';
 import { Copy, Key, Trash2, Plus } from 'lucide-react';
 import { apiKeyRepository, agenciaRepository } from '@/infrastructure/repositories';
 import type { ApiKey, Agencia } from '@/infrastructure/domain/types';
+import { toast } from 'sonner';
 
 export default function ApiKeysPage() {
   const [data, setData] = useState<ApiKey[]>([]);
@@ -20,6 +22,8 @@ export default function ApiKeysPage() {
   const [fechaExpiracion, setFechaExpiracion] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [createdToken, setCreatedToken] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { role, idAgencia, isSuperadmin, isLoading: sessionLoading } = useUserRole();
 
@@ -38,19 +42,33 @@ export default function ApiKeysPage() {
   }, [sessionLoading, loadApiKeys]);
 
   useEffect(() => {
-    if (!isSuperadmin || !dialogOpen) return;
+    if (!isSuperadmin) return;
     agenciaRepository.list().then(setAgencias).catch(console.error);
-  }, [isSuperadmin, dialogOpen]);
+  }, [isSuperadmin]);
+
+  const agenciasMap = useMemo(() => new Map(agencias.map((a) => [String(a.id), a])), [agencias]);
 
   async function handleCopy(token: string) {
     await navigator.clipboard.writeText(token);
-    alert('Copiado');
+    toast.success('Token copiado al portapapeles');
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('¿Eliminar esta API Key?')) return;
-    await apiKeyRepository.delete(id);
-    loadApiKeys();
+  function handleDeleteRequest(id: string) {
+    setDeletingId(id);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deletingId) return;
+    setDeleting(true);
+    try {
+      await apiKeyRepository.delete(deletingId);
+      setDeletingId(null);
+      loadApiKeys();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al eliminar la API Key');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   async function handleCreate() {
@@ -65,8 +83,7 @@ export default function ApiKeysPage() {
       setCreatedToken(created.token);
       loadApiKeys();
     } catch (e) {
-      console.error(e);
-      alert(e instanceof Error ? e.message : 'Error al crear');
+      toast.error(e instanceof Error ? e.message : 'Error al crear la API Key');
     } finally {
       setSubmitting(false);
     }
@@ -121,7 +138,7 @@ export default function ApiKeysPage() {
           <TableBody>
             {data.map((k) => (
               <TableRow key={k.id}>
-                <TableCell className="font-medium text-neutral-900">{k.idAgencia}</TableCell>
+                <TableCell className="font-medium text-neutral-900">{agenciasMap.get(String(k.idAgencia))?.razonSocial ?? k.idAgencia}</TableCell>
                 <TableCell>
                   <code className="text-xs bg-neutral-100 px-2 py-1 rounded">{k.token.slice(0, 16)}...</code>
                 </TableCell>
@@ -136,7 +153,7 @@ export default function ApiKeysPage() {
                     <Button variant="ghost" size="icon-sm" onClick={() => handleCopy(k.token)}>
                       <Copy className="size-4" />
                     </Button>
-                    <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(k.id)}>
+                    <Button variant="ghost" size="icon-sm" onClick={() => handleDeleteRequest(k.id)}>
                       <Trash2 className="size-4 text-red-500" />
                     </Button>
                   </div>
@@ -191,7 +208,7 @@ export default function ApiKeysPage() {
                     onChange={(e) => setSelectedAgencia(e.target.value)}
                   >
                     <option value="">Seleccionar agencia...</option>
-                    {agencias.filter((a) => !data.some((k) => String(k.idAgencia) === a.id)).map((a) => (
+                    {agencias.filter((a) => !data.some((k) => String(k.idAgencia) === String(a.id))).map((a) => (
                       <option key={a.id} value={a.id}>{a.razonSocial}</option>
                     ))}
                   </select>
@@ -214,6 +231,23 @@ export default function ApiKeysPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta API Key?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Cualquier integración que use esta clave dejará de funcionar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={deleting} className="bg-red-600 hover:bg-red-700">
+              {deleting ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

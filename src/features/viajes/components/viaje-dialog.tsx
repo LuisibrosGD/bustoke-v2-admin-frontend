@@ -15,6 +15,7 @@ import {
 } from '@/components/ui';
 import { viajeRepository, rutaRepository, busRepository, choferRepository } from '@/infrastructure/repositories';
 import type { Viaje, EstadoViaje, Ruta, Bus, Chofer } from '@/infrastructure/domain/types';
+import { toast } from 'sonner';
 
 const ESTADOS: { value: EstadoViaje; label: string }[] = [
   { value: 'programado', label: 'Programado' },
@@ -125,6 +126,22 @@ export function ViajeDialog({ open, onOpenChange, viaje, onSave }: Props) {
   }, [viaje, open, rutas]);
 
   const handleSave = useCallback(async () => {
+    if (!idRuta) {
+      toast.error('Selecciona terminal de origen y destino.');
+      return;
+    }
+    if (!idBus) {
+      toast.error('Selecciona un bus.');
+      return;
+    }
+    if (!fechaHoraSalida || !fechaHoraLlegada) {
+      toast.error('Completa la fecha y hora de salida y llegada.');
+      return;
+    }
+    if (new Date(fechaHoraLlegada) <= new Date(fechaHoraSalida)) {
+      toast.error('La llegada debe ser posterior a la salida.');
+      return;
+    }
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
@@ -143,7 +160,7 @@ export function ViajeDialog({ open, onOpenChange, viaje, onSave }: Props) {
       }
       onSave();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al guardar viaje');
+      toast.error(err instanceof Error ? err.message : 'Error al guardar viaje');
     } finally {
       setSaving(false);
     }
@@ -164,7 +181,7 @@ export function ViajeDialog({ open, onOpenChange, viaje, onSave }: Props) {
               <Label htmlFor="origen">Terminal Origen</Label>
               <select
                 id="origen"
-                className="flex h-11 w-full min-w-0 rounded-md border border-input bg-transparent px-[14px] py-[10px] text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm"
+                className="flex h-11 w-full min-w-0 rounded-md border border-input bg-transparent px-3.5 py-2.5 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm"
                 value={origenId}
                 onChange={(e) => { setOrigenId(e.target.value); setDestinoId(''); }}
                 disabled={loading}
@@ -179,7 +196,7 @@ export function ViajeDialog({ open, onOpenChange, viaje, onSave }: Props) {
               <Label htmlFor="destino">Terminal Destino</Label>
               <select
                 id="destino"
-                className="flex h-11 w-full min-w-0 rounded-md border border-input bg-transparent px-[14px] py-[10px] text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm"
+                className="flex h-11 w-full min-w-0 rounded-md border border-input bg-transparent px-3.5 py-2.5 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm"
                 value={destinoId}
                 onChange={(e) => setDestinoId(e.target.value)}
                 disabled={!origenId || loading}
@@ -203,7 +220,7 @@ export function ViajeDialog({ open, onOpenChange, viaje, onSave }: Props) {
               <Label htmlFor="idBus">Bus</Label>
               <select
                 id="idBus"
-                className="flex h-11 w-full min-w-0 rounded-md border border-input bg-transparent px-[14px] py-[10px] text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm"
+                className="flex h-11 w-full min-w-0 rounded-md border border-input bg-transparent px-3.5 py-2.5 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm"
                 value={idBus}
                 onChange={(e) => setIdBus(e.target.value)}
                 disabled={loading}
@@ -218,7 +235,7 @@ export function ViajeDialog({ open, onOpenChange, viaje, onSave }: Props) {
               <Label htmlFor="idChofer">Chofer</Label>
               <select
                 id="idChofer"
-                className="flex h-11 w-full min-w-0 rounded-md border border-input bg-transparent px-[14px] py-[10px] text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm"
+                className="flex h-11 w-full min-w-0 rounded-md border border-input bg-transparent px-3.5 py-2.5 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm"
                 value={idChofer}
                 onChange={(e) => setIdChofer(e.target.value)}
                 disabled={loading}
@@ -245,7 +262,7 @@ export function ViajeDialog({ open, onOpenChange, viaje, onSave }: Props) {
               <Label htmlFor="estado">Estado</Label>
               <select
                 id="estado"
-                className="flex h-11 w-full min-w-0 rounded-md border border-input bg-transparent px-[14px] py-[10px] text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm"
+                className="flex h-11 w-full min-w-0 rounded-md border border-input bg-transparent px-3.5 py-2.5 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm"
                 value={estado}
                 onChange={(e) => setEstado(e.target.value as EstadoViaje)}
               >

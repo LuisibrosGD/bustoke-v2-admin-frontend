@@ -3,15 +3,35 @@
 import Link from 'next/link';
 import { ColumnDef } from '@tanstack/react-table';
 import { Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Badge, Button } from '@/components/ui';
 import type { EstadoTicketSoporte, TicketSoporte } from '@/infrastructure/domain/types';
 import { soporteRepository } from '@/infrastructure/repositories';
+import { cn } from '@/lib/utils/style';
 
 interface ColumnProps {
   isSuperadmin: boolean;
   onDelete: (id: string) => void;
   onRefresh: () => void;
 }
+
+// Mismo mapeo que el Badge de estado en /soporte/[id].
+const ESTADO_VARIANT: Record<string, 'warning' | 'info' | 'success'> = {
+  abierto: 'warning',
+  en_revision: 'info',
+  resuelto: 'success',
+};
+
+const ESTADO_LABEL: Record<string, string> = {
+  abierto: 'Abierto',
+  en_revision: 'En revisión',
+  resuelto: 'Resuelto',
+};
+
+const ESTADO_SELECT_CLASS: Record<string, string> = {
+  abierto: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/50',
+  en_revision: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200/50',
+  resuelto: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/50',
+};
 
 export function useSoporteColumns({ isSuperadmin, onDelete, onRefresh }: ColumnProps): ColumnDef<TicketSoporte>[] {
   return [
@@ -31,9 +51,7 @@ export function useSoporteColumns({ isSuperadmin, onDelete, onRefresh }: ColumnP
         const current = row.getValue('estado') as string;
         if (!isSuperadmin) {
           return (
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${current === 'abierto' ? 'bg-yellow-100 text-yellow-800' : current === 'en_revision' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
-              {current === 'en_revision' ? 'en revisión' : current}
-            </span>
+            <Badge variant={ESTADO_VARIANT[current] ?? 'neutral'}>{ESTADO_LABEL[current] ?? current}</Badge>
           );
         }
         const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -41,10 +59,17 @@ export function useSoporteColumns({ isSuperadmin, onDelete, onRefresh }: ColumnP
           onRefresh();
         };
         return (
-          <select className="text-xs rounded border border-neutral-300 px-1 py-0.5 bg-white" defaultValue={current} onChange={handleChange}>
-            <option value="abierto">abierto</option>
-            <option value="en_revision">en revisión</option>
-            <option value="resuelto">resuelto</option>
+          <select
+            className={cn(
+              'text-xs font-semibold rounded-full border-transparent px-2.5 py-0.5 cursor-pointer outline-none',
+              ESTADO_SELECT_CLASS[current] ?? 'bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200/50'
+            )}
+            defaultValue={current}
+            onChange={handleChange}
+          >
+            <option value="abierto">Abierto</option>
+            <option value="en_revision">En revisión</option>
+            <option value="resuelto">Resuelto</option>
           </select>
         );
       },
