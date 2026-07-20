@@ -2,6 +2,8 @@ import type { Departamento, Provincia, Distrito } from '@/infrastructure/domain/
 
 const API = '/api';
 
+export type TipoDocumentoCatalogo = { id: string; nombre: string };
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API}${path}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -24,6 +26,10 @@ export class UbigeoRepository {
   async getDistritos(idProvincia?: string): Promise<Distrito[]> {
     const query = idProvincia ? `?id_provincia=${idProvincia}` : '';
     return request<Distrito[]>(`/admin/ubigeo/distritos${query}`);
+  }
+
+  async getTiposDocumento(): Promise<TipoDocumentoCatalogo[]> {
+    return request<TipoDocumentoCatalogo[]>('/admin/ubigeo/tipos-documento');
   }
 }
 

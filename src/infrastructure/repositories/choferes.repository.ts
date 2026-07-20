@@ -23,6 +23,17 @@ export class ChoferRepository {
       body: JSON.stringify(data),
     });
   }
+
+  async update(id: string, data: Partial<Chofer>): Promise<Chofer> {
+    return request<Chofer>(`/admin/choferes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async delete(id: string): Promise<void> {
+    await request<void>(`/admin/choferes/${id}`, { method: 'DELETE' });
+  }
 }
 
 export const choferRepository = new ChoferRepository();
