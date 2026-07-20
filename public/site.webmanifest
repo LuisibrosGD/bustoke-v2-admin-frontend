@@ -1,7 +1,7 @@
 {
   "name": "Bustoke",
   "short_name": "Bustoke",
-  "description": "Bustoke - Admmin de transporte",
+  "description": "Bustoke - Admin de transporte",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
