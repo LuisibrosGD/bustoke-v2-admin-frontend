@@ -1,15 +1,24 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Bell, Menu, X } from 'lucide-react';
-import { useSidebar, Input, Avatar, AvatarFallback, Button } from '@/components/ui';
+import { Bell, Menu, X } from 'lucide-react';
+import { useSidebar, Avatar, AvatarFallback, Button } from '@/components/ui';
 import { useSession } from 'next-auth/react';
+import { useUserRole } from '@/hooks';
 import { notificacionRepository } from '@/infrastructure/repositories';
 import type { Notificacion } from '@/infrastructure/domain/types';
+import { GlobalSearch } from './global-search';
+
+const ROLE_LABEL: Record<string, string> = {
+  superadmin: 'Superadmin',
+  admin_agencia: 'Admin agencia',
+  admin_terminal: 'Admin terminal',
+};
 
 export function DashboardHeader() {
   const { toggleSidebar } = useSidebar();
   const { data: session } = useSession();
+  const { role } = useUserRole();
   const [noLeidas, setNoLeidas] = useState(0);
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [openPanel, setOpenPanel] = useState(false);
@@ -63,13 +72,7 @@ export function DashboardHeader() {
           >
             <Menu className="size-5" />
           </button>
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
-            <Input
-              placeholder="Buscar..."
-              className="h-9 pl-10 bg-neutral-50 border-neutral-200 text-sm rounded-lg focus:bg-white"
-            />
-          </div>
+          <GlobalSearch />
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -124,7 +127,7 @@ export function DashboardHeader() {
               <span className="text-sm font-semibold text-neutral-800">
                 {session?.user?.name || 'U Admin'}
               </span>
-              <span className="text-xs text-neutral-500">Admin</span>
+              <span className="text-xs text-neutral-500">{(role && ROLE_LABEL[role]) || 'Admin'}</span>
             </div>
           </div>
         </div>
