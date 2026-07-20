@@ -20,3 +20,5 @@ export { NotificacionRepository, notificacionRepository } from './notificaciones
 export { UbigeoRepository, ubigeoRepository } from './ubigeo.repository';
 export { ChoferRepository, choferRepository } from './choferes.repository';
 export { UsuarioRepository, usuarioRepository } from './usuarios.repository';
+export { SearchRepository, searchRepository } from './search.repository';
+export { UsuarioAdminRepository, usuarioAdminRepository } from './usuarios-admin.repository';
