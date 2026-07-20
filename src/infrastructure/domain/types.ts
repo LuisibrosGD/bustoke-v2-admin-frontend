@@ -46,7 +46,7 @@ export type EstadoBoleto = 'activo' | 'cancelado';
 export type CanalVenta = 'app_bustoke' | 'ventanilla_fisica';
 export type EstadoReclamo = 'abierto' | 'en_proceso' | 'resuelto';
 export type EstadoTicketSoporte = 'abierto' | 'en_revision' | 'resuelto';
-export type RolUsuario = 'cliente' | 'admin_agencia' | 'superadmin';
+export type RolUsuario = 'cliente' | 'admin_agencia' | 'admin_terminal' | 'superadmin';
 
 // --- Terminales ---
 
@@ -157,6 +157,7 @@ export type Usuario = {
   telefono: string | null;
   rol: RolUsuario;
   idAgencia: string | null;
+  idTerminal: string | null;
   activo: boolean;
   fechaCreacion: string;
 };
@@ -358,4 +359,20 @@ export type AuditLog = {
   datosNuevos: Record<string, unknown> | null;
   fecha: string;
   idUsuarioResponsable: string | null;
+};
+
+// --- Búsqueda global ---
+
+export type SearchResultItem = {
+  id: string | number;
+  title: string;
+  subtitle: string;
+  url: string;
+};
+
+export type SearchCategory = 'agencias' | 'viajes' | 'buses' | 'terminales' | 'reclamos' | 'pasajeros' | 'boletos';
+
+export type SearchResponse = {
+  query: string;
+  results: Partial<Record<SearchCategory, SearchResultItem[]>>;
 };

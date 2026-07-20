@@ -15,6 +15,8 @@ import {
   CreditCard,
   Key,
   Settings,
+  UserCog,
+  IdCard,
 } from 'lucide-react';
 
 export const PATHS = {
@@ -34,6 +36,9 @@ export const PATHS = {
   flotaPage: '/flota',
   flotaDetailPage: (id: string) => `/flota/${id}`,
   flotaEditPage: (id: string) => `/flota/${id}/editar`,
+
+  // Choferes
+  choferesPage: '/configuracion/choferes',
 
   // Rutas
   rutasPage: '/rutas',
@@ -69,6 +74,9 @@ export const PATHS = {
   // API Keys
   apiKeysPage: '/configuracion/api-keys',
 
+  // Usuarios
+  usuariosPage: '/configuracion/usuarios',
+
   // Configuración
   configuracionPage: '/configuracion',
 
@@ -89,6 +97,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: 'Agencias', url: PATHS.agenciasPage, icon: Building2 },
   { title: 'Terminales', url: PATHS.terminalesPage, icon: MapPin },
   { title: 'Flota', url: PATHS.flotaPage, icon: Bus },
+  { title: 'Choferes', url: PATHS.choferesPage, icon: IdCard },
   { title: 'Rutas', url: PATHS.rutasPage, icon: Route },
   { title: 'Viajes', url: PATHS.viajesPage, icon: Map },
   { title: 'Boletos', url: PATHS.boletosPage, icon: Ticket },
@@ -99,6 +108,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: 'Comisiones', url: PATHS.comisionesPage, icon: CircleDollarSign },
   { title: 'Suscripciones', url: PATHS.suscripcionesPage, icon: CreditCard },
   { title: 'API Keys', url: PATHS.apiKeysPage, icon: Key },
+  { title: 'Usuarios', url: PATHS.usuariosPage, icon: UserCog },
   {
     title: 'Reportes',
     url: PATHS.reportsPage,

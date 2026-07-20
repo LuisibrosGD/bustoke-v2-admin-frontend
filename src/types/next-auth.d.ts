@@ -6,7 +6,7 @@ declare module 'next-auth' {
       id?: string;
       email?: string;
       name?: string;
-      role?: 'superadmin' | 'admin_agencia';
+      role?: 'superadmin' | 'admin_agencia' | 'admin_terminal';
       avatarUrl?: string;
       accessToken?: string;
       accessTokenExpiresAt?: number;

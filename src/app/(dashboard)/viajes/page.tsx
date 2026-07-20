@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useUserRole } from '@/hooks';
 import { ViajesTable } from '@/features/viajes/components';
 import { ViajeDialog } from '@/features/viajes/components/viaje-dialog';
 import {
@@ -20,6 +21,7 @@ import type { Viaje } from '@/infrastructure/domain/types';
 import { toast } from 'sonner';
 
 export default function ViajesPage() {
+  const { isAdminTerminal } = useUserRole();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editingViaje, setEditingViaje] = useState<Viaje | null>(null);
@@ -61,9 +63,11 @@ export default function ViajesPage() {
             Programación de viajes interprovinciales.
           </p>
         </div>
-        <Button onClick={() => { setEditingViaje(null); setDialogOpen(true); }}>
-          <PlusIcon className="size-4 mr-1" /> Nuevo Viaje
-        </Button>
+        {!isAdminTerminal && (
+          <Button onClick={() => { setEditingViaje(null); setDialogOpen(true); }}>
+            <PlusIcon className="size-4 mr-1" /> Nuevo Viaje
+          </Button>
+        )}
       </div>
       <ViajesTable key={refreshKey} onEdit={handleEdit} onDelete={handleDeleteRequest} />
       <ViajeDialog

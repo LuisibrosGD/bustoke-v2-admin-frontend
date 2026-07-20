@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useUserRole } from '@/hooks';
 import { useRutas } from '@/features/drilldown/application/use-entity-data';
 import { Input, Button, DataTable, DataTableEmpty, Skeleton } from '@/components/ui';
 import { SearchIcon, XIcon, Eye, Pencil, Trash2 } from 'lucide-react';
@@ -16,6 +17,7 @@ interface Props {
 export function RutasTable({ onEdit, onDelete }: Props) {
   const [search, setSearch] = useState('');
   const { data, isLoading, error } = useRutas();
+  const { isAdminTerminal } = useUserRole();
 
   const filtered = useMemo(() => {
     if (!search) return data;
@@ -35,16 +37,20 @@ export function RutasTable({ onEdit, onDelete }: Props) {
               <Eye className="size-4" />
             </Button>
           </Link>
-          <Button variant="ghost" size="icon" className="size-8" title="Editar" onClick={() => onEdit(row.original)}>
-            <Pencil className="size-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="size-8" title="Eliminar" onClick={() => onDelete(row.original.id)}>
-            <Trash2 className="size-4 text-red-500" />
-          </Button>
+          {!isAdminTerminal && (
+            <>
+              <Button variant="ghost" size="icon" className="size-8" title="Editar" onClick={() => onEdit(row.original)}>
+                <Pencil className="size-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="size-8" title="Eliminar" onClick={() => onDelete(row.original.id)}>
+                <Trash2 className="size-4 text-red-500" />
+              </Button>
+            </>
+          )}
         </div>
       ),
     },
-  ], [onEdit, onDelete]);
+  ], [onEdit, onDelete, isAdminTerminal]);
 
   if (isLoading) {
     return (
@@ -76,7 +82,11 @@ export function RutasTable({ onEdit, onDelete }: Props) {
           </div>
           {search && <Button variant="ghost" size="sm" onClick={() => setSearch('')}><XIcon className="size-4 mr-1" /> Limpiar</Button>}
         </div>
-        <DataTable columns={columnsWithActions} data={filtered} />
+        <DataTable
+          columns={columnsWithActions}
+          data={filtered}
+          emptyElement={<DataTableEmpty title="Sin resultados" description="No se encontraron rutas." />}
+        />
       </div>
 
     </>

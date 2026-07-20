@@ -24,27 +24,35 @@ import { LogOut } from 'lucide-react';
 
 const ALL_SECTIONS: { label: string; keys: string[] }[] = [
   { label: '', keys: ['Inicio'] },
-  { label: 'Gestión', keys: ['Agencias', 'Terminales', 'Flota', 'Rutas', 'Viajes'] },
+  { label: 'Gestión', keys: ['Agencias', 'Terminales', 'Flota', 'Choferes', 'Rutas', 'Viajes'] },
   { label: 'Ventas', keys: ['Boletos', 'Pasajeros'] },
   { label: 'Operaciones', keys: ['Manifiesto SUTRAN', 'Reclamos', 'Soporte'] },
   { label: 'Finanzas', keys: ['Comisiones', 'Suscripciones'] },
-  { label: '', keys: ['API Keys', 'Reportes', 'Configuración'] },
+  { label: '', keys: ['API Keys', 'Usuarios', 'Reportes', 'Configuración'] },
 ];
+
+const ADMIN_TERMINAL_KEYS = ['Inicio', 'Terminales', 'Rutas', 'Viajes', 'Boletos', 'Pasajeros', 'Manifiesto SUTRAN'];
 
 function filterItems(allItems: NavItem[], keys: string[]): NavItem[] {
   return allItems.filter((item) => keys.includes(item.title));
 }
 
 export function AppSidebar() {
-  const { isAdminAgencia } = useUserRole();
+  const { isAdminAgencia, isAdminTerminal } = useUserRole();
 
   const sectionMap = useMemo(() => {
+    if (isAdminTerminal) {
+      return ALL_SECTIONS.map((section) => ({
+        ...section,
+        keys: section.keys.filter((k) => ADMIN_TERMINAL_KEYS.includes(k)),
+      })).filter((s) => s.keys.length > 0);
+    }
     if (!isAdminAgencia) return ALL_SECTIONS;
     return ALL_SECTIONS.map((section) => ({
       ...section,
       keys: section.keys.filter((k) => k !== 'Agencias'),
     })).filter((s) => s.keys.length > 0);
-  }, [isAdminAgencia]);
+  }, [isAdminAgencia, isAdminTerminal]);
 
   const allItems = useMemo(() => NAV_ITEMS as NavItem[], []);
   const { open } = useSidebar();

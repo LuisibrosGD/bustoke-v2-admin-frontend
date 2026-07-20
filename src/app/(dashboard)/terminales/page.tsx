@@ -1,18 +1,24 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useUserRole } from '@/hooks';
 import { TerminalesTable } from '@/features/terminales/components';
 import { terminalRepository, ubigeoRepository } from '@/infrastructure/repositories';
 import { useRepository } from '@/infrastructure/hooks/use-repository';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Input } from '@/components/ui';
 import type { Terminal, Departamento, Provincia, Distrito } from '@/infrastructure/domain/types';
+import { toast } from 'sonner';
+import { PlusIcon } from 'lucide-react';
 
 export default function TerminalesPage() {
+  const { isAdminTerminal } = useUserRole();
   const { data, isLoading, error, refetch } = useRepository(terminalRepository);
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editing, setEditing] = useState<Terminal | null>(null);
   const [form, setForm] = useState({ idDistrito: '', nombre: '', direccion: '' });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [todasProvincias, setTodasProvincias] = useState<Provincia[]>([]);
@@ -67,13 +73,24 @@ export default function TerminalesPage() {
   }
 
   async function handleSave() {
-    if (modal === 'create') {
-      await terminalRepository.create(form);
-    } else if (modal === 'edit' && editing) {
-      await terminalRepository.update(editing.id, form);
+    if (!form.idDistrito || !form.nombre.trim() || !form.direccion.trim()) {
+      toast.error('Completa el distrito, nombre y dirección del terminal.');
+      return;
     }
-    setModal(null);
-    refetch();
+    setSaving(true);
+    try {
+      if (modal === 'create') {
+        await terminalRepository.create(form);
+      } else if (modal === 'edit' && editing) {
+        await terminalRepository.update(editing.id, form);
+      }
+      setModal(null);
+      refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al guardar el terminal');
+    } finally {
+      setSaving(false);
+    }
   }
 
   function confirmDelete(terminal: Terminal) {
@@ -82,9 +99,16 @@ export default function TerminalesPage() {
 
   async function handleDelete() {
     if (!deleteId) return;
-    await terminalRepository.delete(deleteId);
-    setDeleteId(null);
-    refetch();
+    setDeleting(true);
+    try {
+      await terminalRepository.delete(deleteId);
+      setDeleteId(null);
+      refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al eliminar el terminal');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Cargando terminales...</div>;
@@ -92,12 +116,16 @@ export default function TerminalesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold">Terminales</h1>
-          <p className="mt-2 text-muted-foreground">Terminales terrestres registrados.</p>
+          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Terminales</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">Terminales terrestres registrados.</p>
         </div>
-        <Button onClick={openCreate}>Nuevo Terminal</Button>
+        {!isAdminTerminal && (
+          <Button onClick={openCreate}>
+            <PlusIcon className="size-4 mr-1" /> Nuevo Terminal
+          </Button>
+        )}
       </div>
       <TerminalesTable data={data} onEdit={openEdit} onDelete={confirmDelete} />
 
@@ -154,12 +182,12 @@ export default function TerminalesPage() {
                 <Input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
               </div>
               <div>
-                <label className="text-sm font-medium">Direcci&oacute;n</label>
+                <label className="text-sm font-medium">Dirección</label>
                 <Input value={form.direccion} onChange={(e) => setForm({ ...form, direccion: e.target.value })} />
               </div>
             </div>
             <DialogFooter showCloseButton>
-              <Button onClick={handleSave}>Guardar</Button>
+              <Button onClick={handleSave} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -169,11 +197,11 @@ export default function TerminalesPage() {
         <Dialog open onOpenChange={(o) => { if (!o) setDeleteId(null); }}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirmar eliminaci&oacute;n</DialogTitle>
+              <DialogTitle>Confirmar eliminación</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-muted-foreground">¿Estás seguro de eliminar este terminal?</p>
+            <p className="text-sm text-muted-foreground">¿Estás seguro de eliminar este terminal? Esta acción no se puede deshacer.</p>
             <DialogFooter showCloseButton>
-              <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
+              <Button variant="destructive" onClick={handleDelete} disabled={deleting}>{deleting ? 'Eliminando...' : 'Eliminar'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

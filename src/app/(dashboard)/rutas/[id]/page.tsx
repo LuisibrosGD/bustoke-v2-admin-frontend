@@ -3,11 +3,16 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useUserRole } from '@/hooks';
 import { Button } from '@/components/ui/button/button';
 import { Input } from '@/components/ui/input/input';
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
+} from '@/components/ui';
 import { ArrowLeft, Route, CalendarCheck, ArrowRight, Building2, Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import { agenciaRepository, rutaRepository, tarifaRepository, viajeRepository } from '@/infrastructure/repositories';
 import type { Agencia, Ruta, TarifaRuta } from '@/infrastructure/domain/types';
+import { toast } from 'sonner';
 
 function InfoRow({ label, value }: { label: string; value: string | React.ReactNode }) {
   return (
@@ -20,6 +25,7 @@ function InfoRow({ label, value }: { label: string; value: string | React.ReactN
 
 export default function RutaDetailPage() {
   const params = useParams<{ id: string }>();
+  const { isAdminTerminal } = useUserRole();
   const [ruta, setRuta] = useState<Ruta | null>(null);
   const [agencia, setAgencia] = useState<Agencia | null>(null);
   const [viajesCount, setViajesCount] = useState(0);
@@ -32,6 +38,9 @@ export default function RutaDetailPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newTipo, setNewTipo] = useState<'normal' | 'vip'>('normal');
   const [newPrecio, setNewPrecio] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -62,24 +71,57 @@ export default function RutaDetailPage() {
 
   async function handleUpdate(tarifaId: string) {
     const precio = parseFloat(editPrecio);
-    if (isNaN(precio) || precio <= 0) return;
-    await tarifaRepository.update(tarifaId, { precio });
-    setTarifas((prev) => prev.map((t) => (t.id === tarifaId ? { ...t, precio } : t)));
-    setEditingId(null);
+    if (isNaN(precio) || precio <= 0) {
+      toast.error('Ingresa un precio válido.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await tarifaRepository.update(tarifaId, { precio });
+      setTarifas((prev) => prev.map((t) => (t.id === tarifaId ? { ...t, precio } : t)));
+      setEditingId(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al actualizar la tarifa');
+    } finally {
+      setSaving(false);
+    }
   }
 
-  async function handleDelete(tarifaId: string) {
-    await tarifaRepository.delete(tarifaId);
-    setTarifas((prev) => prev.filter((t) => t.id !== tarifaId));
+  function handleDeleteRequest(tarifaId: string) {
+    setDeletingId(tarifaId);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deletingId) return;
+    setDeleting(true);
+    try {
+      await tarifaRepository.delete(deletingId);
+      setTarifas((prev) => prev.filter((t) => t.id !== deletingId));
+      setDeletingId(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al eliminar la tarifa');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   async function handleCreate() {
     const precio = parseFloat(newPrecio);
-    if (isNaN(precio) || precio <= 0) return;
-    const created = await tarifaRepository.create({ idRuta: parseInt(params.id), tipoServicio: newTipo, precio });
-    setTarifas((prev) => [...prev, created]);
-    setShowCreate(false);
-    setNewPrecio('');
+    if (isNaN(precio) || precio <= 0) {
+      toast.error('Ingresa un precio válido.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const created = await tarifaRepository.create({ idRuta: parseInt(params.id), tipoServicio: newTipo, precio });
+      setTarifas((prev) => [...prev, created]);
+      setShowCreate(false);
+      setNewPrecio('');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al crear la tarifa');
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
@@ -164,10 +206,12 @@ export default function RutaDetailPage() {
             <Route className="size-5 text-neutral-500" />
             <h2 className="text-base font-semibold text-neutral-900">Tarifas por tipo de servicio</h2>
           </div>
-          <Button size="sm" onClick={() => setShowCreate(true)}>
-            <Plus className="size-4" />
-            Agregar tarifa
-          </Button>
+          {!isAdminTerminal && (
+            <Button size="sm" onClick={() => setShowCreate(true)}>
+              <Plus className="size-4" />
+              Agregar tarifa
+            </Button>
+          )}
         </div>
 
         {loadingTarifas ? (
@@ -192,10 +236,10 @@ export default function RutaDetailPage() {
                         onKeyDown={(e) => { if (e.key === 'Enter') handleUpdate(t.id); if (e.key === 'Escape') setEditingId(null); }}
                         autoFocus
                       />
-                      <Button size="icon-sm" variant="ghost" onClick={() => handleUpdate(t.id)}>
+                      <Button size="icon-sm" variant="ghost" disabled={saving} onClick={() => handleUpdate(t.id)}>
                         <Check className="size-4 text-emerald-600" />
                       </Button>
-                      <Button size="icon-sm" variant="ghost" onClick={() => setEditingId(null)}>
+                      <Button size="icon-sm" variant="ghost" disabled={saving} onClick={() => setEditingId(null)}>
                         <X className="size-4 text-neutral-400" />
                       </Button>
                     </div>
@@ -203,12 +247,12 @@ export default function RutaDetailPage() {
                     <span className="text-sm text-neutral-700">S/ {Number(t.precio).toFixed(2)}</span>
                   )}
                 </div>
-                {editingId !== t.id && (
+                {editingId !== t.id && !isAdminTerminal && (
                   <div className="flex items-center gap-1">
                     <Button size="icon-sm" variant="ghost" onClick={() => { setEditingId(t.id); setEditPrecio(String(t.precio)); }}>
                       <Pencil className="size-4" />
                     </Button>
-                    <Button size="icon-sm" variant="ghost" onClick={() => handleDelete(t.id)}>
+                    <Button size="icon-sm" variant="ghost" onClick={() => handleDeleteRequest(t.id)}>
                       <Trash2 className="size-4 text-red-500" />
                     </Button>
                   </div>
@@ -237,11 +281,11 @@ export default function RutaDetailPage() {
                   onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setShowCreate(false); }}
                   autoFocus
                 />
-                <Button size="sm" onClick={handleCreate}>
+                <Button size="sm" disabled={saving} onClick={handleCreate}>
                   <Check className="size-4" />
-                  Guardar
+                  {saving ? 'Guardando...' : 'Guardar'}
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => setShowCreate(false)}>
+                <Button size="sm" variant="outline" disabled={saving} onClick={() => setShowCreate(false)}>
                   Cancelar
                 </Button>
               </div>
@@ -249,6 +293,23 @@ export default function RutaDetailPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta tarifa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={deleting} className="bg-red-600 hover:bg-red-700">
+              {deleting ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

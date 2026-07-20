@@ -8,14 +8,17 @@ import type { RolUsuario } from '@/infrastructure/domain/types';
 interface AccessTokenPayload {
   rol?: RolUsuario;
   id_agencia?: number | string | null;
+  id_terminal?: number | string | null;
 }
 
 export interface UseUserRoleResult {
   role: RolUsuario | undefined;
   idAgencia: string | undefined;
+  idTerminal: string | undefined;
   userId: string | undefined;
   isSuperadmin: boolean;
   isAdminAgencia: boolean;
+  isAdminTerminal: boolean;
   isLoading: boolean;
 }
 
@@ -24,22 +27,27 @@ export function useUserRole(): UseUserRoleResult {
   const accessToken = session?.user?.accessToken;
   const role = session?.user?.role as RolUsuario | undefined;
 
-  const idAgencia = useMemo(() => {
-    if (!accessToken) return undefined;
+  const { idAgencia, idTerminal } = useMemo(() => {
+    if (!accessToken) return { idAgencia: undefined, idTerminal: undefined };
     try {
       const payload = jwtDecode<AccessTokenPayload>(accessToken);
-      return payload.id_agencia != null ? String(payload.id_agencia) : undefined;
+      return {
+        idAgencia: payload.id_agencia != null ? String(payload.id_agencia) : undefined,
+        idTerminal: payload.id_terminal != null ? String(payload.id_terminal) : undefined,
+      };
     } catch {
-      return undefined;
+      return { idAgencia: undefined, idTerminal: undefined };
     }
   }, [accessToken]);
 
   return {
     role,
     idAgencia,
+    idTerminal,
     userId: session?.user?.id,
     isSuperadmin: role === 'superadmin',
     isAdminAgencia: role === 'admin_agencia',
+    isAdminTerminal: role === 'admin_terminal',
     isLoading: status === 'loading',
   };
 }
