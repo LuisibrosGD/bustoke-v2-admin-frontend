@@ -13,6 +13,7 @@ import {
   Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui';
 import { cn } from '@/lib/utils/style';
+import { useUserRole } from '@/hooks';
 
 interface KPI {
   title: string; value: string; subtitle: string;
@@ -22,6 +23,7 @@ interface KPI {
 
 interface DashboardData {
   kpis: { title: string; value: string; subtitle: string }[];
+  context?: { label?: string };
   monthlyTrips: { month: string; viajes: number }[];
   recentActivities: { id: number; descripcion: string; estado: string; hora: string }[];
   upcomingTrips: { hora: string; origen: string; destino: string; pasajeros: number }[];
@@ -56,6 +58,7 @@ const activityBadgeMap: Record<string, 'success' | 'info' | 'warning'> = {
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
+  const { isAdminTerminal } = useUserRole();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +96,7 @@ export default function AdminDashboard() {
     return (
       <div className="space-y-6 p-4 md:p-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Panel de Administracion</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Panel de Administración</h1>
           <p className="mt-1 text-sm text-neutral-500">Resumen general del sistema de transporte</p>
         </div>
         <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-5 text-red-700">
@@ -120,12 +123,18 @@ export default function AdminDashboard() {
   const recentActivities = data?.recentActivities ?? [];
   const upcomingTrips = data?.upcomingTrips ?? [];
   const alerts = data?.alerts ?? [];
+  const contextLabel = data?.context?.label;
+
+  const headerTitle = isAdminTerminal ? 'Panel de Terminal' : 'Panel de Administración';
+  const headerSubtitle = contextLabel
+    ? (isAdminTerminal ? contextLabel : `Resumen de ${contextLabel}`)
+    : 'Resumen general del sistema de transporte';
 
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Panel de Administracion</h1>
-        <p className="mt-1 text-sm text-neutral-500">Resumen general del sistema de transporte</p>
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{headerTitle}</h1>
+        <p className="mt-1 text-sm text-neutral-500">{headerSubtitle}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
@@ -155,7 +164,7 @@ export default function AdminDashboard() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-neutral-200/60 bg-white p-5 shadow-sm">
           <h2 className="mb-1 text-base font-semibold text-neutral-900">Viajes por mes</h2>
-          <p className="mb-4 text-xs text-neutral-500">Evolucion mensual de viajes realizados</p>
+          <p className="mb-4 text-xs text-neutral-500">Evolución mensual de viajes realizados</p>
           {monthlyTrips.length === 0 ? (
             <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
               Sin datos de viajes disponibles
@@ -182,7 +191,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="rounded-xl border border-neutral-200/60 bg-white p-5 shadow-sm">
-          <h2 className="mb-1 text-base font-semibold text-neutral-900">Ultimas actividades</h2>
+          <h2 className="mb-1 text-base font-semibold text-neutral-900">Últimas actividades</h2>
           <p className="mb-4 text-xs text-neutral-500">Movimientos recientes del sistema</p>
           <Table>
             <TableHeader>
@@ -221,7 +230,7 @@ export default function AdminDashboard() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-xl border border-neutral-200/60 bg-white p-5 shadow-sm">
-          <h2 className="mb-1 text-base font-semibold text-neutral-900">Proximos viajes</h2>
+          <h2 className="mb-1 text-base font-semibold text-neutral-900">Próximos viajes</h2>
           <p className="mb-4 text-xs text-neutral-500">Salidas programadas</p>
           <div className="space-y-3">
             {upcomingTrips.map((trip, index) => (
@@ -232,6 +241,9 @@ export default function AdminDashboard() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-neutral-900">{trip.hora}</span>
+                    {(trip.origen || trip.destino) && (
+                      <span className="text-xs text-neutral-500 truncate">{trip.origen} &rarr; {trip.destino}</span>
+                    )}
                   </div>
                   <p className="mt-0.5 text-xs text-neutral-400">{trip.pasajeros} pasajeros</p>
                 </div>
