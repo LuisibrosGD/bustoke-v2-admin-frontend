@@ -6,10 +6,13 @@ import { useUserRole } from '@/hooks';
 import { RutasTable } from '@/features/rutas/components';
 import { rutaRepository, terminalRepository, agenciaRepository } from '@/infrastructure/repositories';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Input } from '@/components/ui';
+import { BulkUploadDialog } from '@/components/shared';
+import { uploadBulkDataAction } from '@/lib/actions/bulk-upload.actions';
+import { UploadIcon } from 'lucide-react';
 import type { Ruta, Terminal, Agencia } from '@/infrastructure/domain/types';
 
 export default function RutasPage() {
-  const { idAgencia, isSuperadmin } = useUserRole();
+  const { idAgencia, isSuperadmin, isAdminAgencia, isAdminTerminal } = useUserRole();
 
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editing, setEditing] = useState<Ruta | null>(null);
@@ -19,6 +22,7 @@ export default function RutasPage() {
   const [agencias, setAgencias] = useState<Agencia[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   useEffect(() => {
     const params = !isSuperadmin && idAgencia ? { idAgencia } as Record<string, string> : undefined;
@@ -115,9 +119,34 @@ export default function RutasPage() {
             Conexiones interprovinciales configuradas en el sistema.
           </p>
         </div>
-        <Button onClick={openCreate}>Nueva Ruta</Button>
+        {!isAdminTerminal && (
+          <div className="flex items-center gap-2">
+            {isAdminAgencia && (
+              <Button variant="outline" onClick={() => setBulkOpen(true)}>
+                <UploadIcon className="size-4" /> Carga masiva
+              </Button>
+            )}
+            <Button onClick={openCreate}>Nueva Ruta</Button>
+          </div>
+        )}
       </div>
       <RutasTable key={refreshKey} onEdit={openEdit} onDelete={confirmDelete} />
+
+      <BulkUploadDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        title="Carga masiva de rutas"
+        description="Sube un Excel (.xlsx) con tus rutas: terminal origen, terminal destino y tarifa base."
+        endpoint="/admin/rutas/carga-masiva"
+        templateEndpoint="/admin/rutas/carga-masiva/plantilla"
+        uploadAction={uploadBulkDataAction}
+        onSuccess={() => setRefreshKey((k) => k + 1)}
+        columns={[
+          { name: 'Terminal Origen', example: 'Terminal Terrestre Plaza Norte' },
+          { name: 'Terminal Destino', example: 'Terminal Terrestre de Trujillo' },
+          { name: 'Tarifa Base', example: '45.00' },
+        ]}
+      />
 
       {modal && (
         <Dialog open onOpenChange={(o) => { if (!o) setModal(null); }}>

@@ -29,6 +29,15 @@ import { BulkUploadResponse } from '@/types/common.types';
 import { toast } from 'sonner';
 import { getBulkTemplateAction } from '@/lib/actions/bulk-upload.actions';
 
+export interface BulkColumnSpec {
+  /** Nombre exacto de la columna tal como debe aparecer en el Excel */
+  name: string;
+  /** Valor de ejemplo para esa columna */
+  example: string;
+  /** Si la columna es obligatoria (por defecto true) */
+  required?: boolean;
+}
+
 interface BulkUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -38,6 +47,8 @@ interface BulkUploadDialogProps {
   templateEndpoint?: string;
   uploadAction: (formData: FormData) => Promise<any>;
   onSuccess?: () => void;
+  /** Columnas esperadas en el Excel; si se pasan, se muestra una tabla de ejemplo */
+  columns?: BulkColumnSpec[];
 }
 
 export function BulkUploadDialog({
@@ -49,6 +60,7 @@ export function BulkUploadDialog({
   templateEndpoint,
   uploadAction,
   onSuccess,
+  columns,
 }: BulkUploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -158,6 +170,51 @@ export function BulkUploadDialog({
                 <AlertCircle className="size-4" />
                 <AlertDescription>{globalError}</AlertDescription>
               </Alert>
+            )}
+
+            {columns && columns.length > 0 && (
+              <div className="rounded-xl border border-muted overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/40 border-b border-muted">
+                  <FileSpreadsheet className="size-4 text-green-600" />
+                  <span className="text-xs font-bold text-foreground">
+                    Estructura esperada del Excel
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[11px] border-collapse">
+                    <thead>
+                      <tr className="bg-muted/20">
+                        {columns.map((col) => (
+                          <th
+                            key={col.name}
+                            className="px-3 py-2 text-left font-bold text-foreground whitespace-nowrap border-r border-muted last:border-r-0"
+                          >
+                            {col.name}
+                            {col.required === false && (
+                              <span className="ml-1 font-normal text-muted-foreground">(opcional)</span>
+                            )}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {columns.map((col) => (
+                          <td
+                            key={col.name}
+                            className="px-3 py-2 text-muted-foreground whitespace-nowrap border-r border-t border-muted last:border-r-0"
+                          >
+                            {col.example}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="px-4 py-2 text-[10px] text-muted-foreground bg-muted/20 border-t border-muted">
+                  La primera fila del archivo debe contener exactamente estos encabezados. Cada fila siguiente es un registro.
+                </p>
+              </div>
             )}
 
             {templateEndpoint && (

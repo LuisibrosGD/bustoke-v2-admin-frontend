@@ -6,10 +6,13 @@ import { useUserRole } from '@/hooks';
 import { FlotaTable } from '@/features/flota/components';
 import { busRepository, agenciaRepository } from '@/infrastructure/repositories';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Input } from '@/components/ui';
+import { BulkUploadDialog } from '@/components/shared';
+import { uploadBulkDataAction } from '@/lib/actions/bulk-upload.actions';
+import { UploadIcon } from 'lucide-react';
 import type { Agencia } from '@/infrastructure/domain/types';
 
 export default function FlotaPage() {
-  const { idAgencia, isSuperadmin } = useUserRole();
+  const { idAgencia, isSuperadmin, isAdminAgencia } = useUserRole();
 
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({ idAgencia: '', placa: '', cantidadPisos: '1' });
@@ -17,6 +20,7 @@ export default function FlotaPage() {
   const [agencias, setAgencias] = useState<Agencia[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   useEffect(() => {
     if (isSuperadmin) agenciaRepository.list().then(setAgencias);
@@ -79,9 +83,31 @@ export default function FlotaPage() {
             Unidades de transporte registradas por cada agencia.
           </p>
         </div>
-        <Button onClick={openCreate}>Nuevo Bus</Button>
+        <div className="flex items-center gap-2">
+          {isAdminAgencia && (
+            <Button variant="outline" onClick={() => setBulkOpen(true)}>
+              <UploadIcon className="size-4" /> Carga masiva
+            </Button>
+          )}
+          <Button onClick={openCreate}>Nuevo Bus</Button>
+        </div>
       </div>
       <FlotaTable key={refreshKey} onDelete={confirmDelete} />
+
+      <BulkUploadDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        title="Carga masiva de buses"
+        description="Sube un Excel (.xlsx) con tu flota: placa y cantidad de pisos."
+        endpoint="/admin/flota/buses/carga-masiva"
+        templateEndpoint="/admin/flota/buses/carga-masiva/plantilla"
+        uploadAction={uploadBulkDataAction}
+        onSuccess={() => setRefreshKey((k) => k + 1)}
+        columns={[
+          { name: 'Placa', example: 'ABC-123' },
+          { name: 'Cantidad de Pisos', example: '2' },
+        ]}
+      />
 
       {modal && (
         <Dialog open onOpenChange={(o) => { if (!o) setModal(false); }}>
