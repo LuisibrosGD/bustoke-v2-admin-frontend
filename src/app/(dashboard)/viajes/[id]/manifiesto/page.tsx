@@ -92,16 +92,20 @@ export default function ManifiestoViajePage() {
     doc.text('Manifiesto de Pasajeros', 14, 16);
 
     doc.setFontSize(9);
-    const info = [
+    // La ruta va en su propia fila (sin pareja a la derecha): el nombre de los
+    // terminales puede ser largo y, al no haber wrap automático en jsPDF,
+    // invadía la columna derecha y tapaba el texto de "Bus".
+    const info: [string, string?][] = [
       [`Empresa: ${agencia?.razonSocial ?? '—'}`, `RUC: ${agencia?.ruc ?? '—'}`],
-      [`Ruta: ${terminalOrigen?.nombre ?? '—'} → ${terminalDestino?.nombre ?? '—'}`, `Bus: ${bus?.placa ?? '—'}`],
-      [`Fecha/Hora salida: ${fechaHoraSalida}`, `Llegada estimada: ${fechaHoraLlegada}`],
-      [`Rampa: ${viaje?.rampaEmbarque ?? '—'}`, `Estado: ${estadoViajeLabel[viaje?.estado ?? ''] ?? '—'}`],
+      [`Ruta: ${terminalOrigen?.nombre ?? '—'} → ${terminalDestino?.nombre ?? '—'}`],
+      [`Bus: ${bus?.placa ?? '—'}`, `Fecha/Hora salida: ${fechaHoraSalida}`],
+      [`Llegada estimada: ${fechaHoraLlegada}`, `Rampa: ${viaje?.rampaEmbarque ?? '—'}`],
+      [`Estado: ${estadoViajeLabel[viaje?.estado ?? ''] ?? '—'}`],
     ];
     let y = 24;
     info.forEach(([left, right]) => {
       doc.text(left, 14, y);
-      doc.text(right, 110, y);
+      if (right) doc.text(right, 110, y);
       y += 6;
     });
 
