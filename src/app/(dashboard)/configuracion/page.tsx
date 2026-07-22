@@ -19,24 +19,29 @@ const PLATAFORMA = { nombre: 'Bustoke S.A.C.', ruc: '20123456789' };
 
 export default function ConfiguracionPage() {
   const { isSuperadmin, idAgencia, isLoading: userLoading } = useUserRole();
-  const [empresa, setEmpresa] = useState(PLATAFORMA);
-  const [loading, setLoading] = useState(true);
+  const [fetched, setFetched] = useState<{ nombre: string; ruc: string } | null>(null);
+  const [fetchTerminado, setFetchTerminado] = useState(false);
+
+  const necesitaFetch = !userLoading && !isSuperadmin && !!idAgencia;
+  const loading = userLoading || (necesitaFetch && !fetchTerminado);
+  const empresa = fetched ?? PLATAFORMA;
 
   useEffect(() => {
-    if (userLoading) return;
-    if (isSuperadmin || !idAgencia) {
-      setEmpresa(PLATAFORMA);
-      setLoading(false);
-      return;
-    }
+    if (!necesitaFetch || !idAgencia) return;
+    let cancelado = false;
     agenciaRepository
       .getById(idAgencia)
       .then((a) => {
-        if (a) setEmpresa({ nombre: a.razonSocial, ruc: a.ruc });
+        if (a && !cancelado) setFetched({ nombre: a.razonSocial, ruc: a.ruc });
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [isSuperadmin, idAgencia, userLoading]);
+      .finally(() => {
+        if (!cancelado) setFetchTerminado(true);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [necesitaFetch, idAgencia]);
 
   return (
     <div className="space-y-6">
