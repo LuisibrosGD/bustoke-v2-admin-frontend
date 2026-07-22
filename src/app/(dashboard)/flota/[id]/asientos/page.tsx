@@ -10,19 +10,34 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
 } from '@/components/ui';
-import { BusSeatMapEditor, type SeatDraft } from '@/features/flota/components/bus-seat-map-editor';
-import { busRepository, asientoRepository } from '@/infrastructure/repositories';
+import { BusSeatMapEditor, type AmenidadDraft, type SeatDraft } from '@/features/flota/components/bus-seat-map-editor';
+import { busRepository, asientoRepository, amenidadRepository } from '@/infrastructure/repositories';
 import type { TemplateDiff } from '@/infrastructure/repositories/asientos.repository';
-import type { Asiento, Bus } from '@/infrastructure/domain/types';
+import type { Amenidad, Asiento, Bus } from '@/infrastructure/domain/types';
+
+function amenidadesCambiaron(existentes: Amenidad[], draft: AmenidadDraft[]): boolean {
+  const normalizar = (a: { tipo: string; piso: number; coordX: number; coordY: number }) =>
+    `${a.tipo}|${a.piso}|${a.coordX}|${a.coordY}`;
+  const setExistente = new Set(existentes.map(normalizar));
+  const setDraft = new Set(draft.map(normalizar));
+  if (setExistente.size !== setDraft.size) return true;
+  for (const key of setExistente) {
+    if (!setDraft.has(key)) return true;
+  }
+  return false;
+}
 
 export default function BusAsientosPage() {
   const params = useParams<{ id: string }>();
   const [bus, setBus] = useState<Bus | null>(null);
   const [asientos, setAsientos] = useState<Asiento[]>([]);
+  const [amenidades, setAmenidades] = useState<Amenidad[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<SeatDraft[]>([]);
+  const [draftAmenidades, setDraftAmenidades] = useState<AmenidadDraft[]>([]);
   const [confirmDiff, setConfirmDiff] = useState<TemplateDiff | null>(null);
+  const [amenidadesDiff, setAmenidadesDiff] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -30,8 +45,12 @@ export default function BusAsientosPage() {
         const b = await busRepository.getById(params.id);
         if (!b) { setLoading(false); return; }
         setBus(b);
-        const a = await asientoRepository.listByBus(b.id);
+        const [a, am] = await Promise.all([
+          asientoRepository.listByBus(b.id),
+          amenidadRepository.listByBus(b.id),
+        ]);
         setAsientos(a);
+        setAmenidades(am);
       } catch (e) {
         console.error(e);
       } finally {
@@ -42,10 +61,12 @@ export default function BusAsientosPage() {
 
   function handleGuardarClick() {
     const diff = asientoRepository.diffTemplate(asientos, draft);
-    if (diff.crear === 0 && diff.actualizar === 0 && diff.eliminar === 0) {
+    const huboAmenidadesDiff = amenidadesCambiaron(amenidades, draftAmenidades);
+    if (diff.crear === 0 && diff.actualizar === 0 && diff.eliminar === 0 && !huboAmenidadesDiff) {
       toast.info('No hay cambios en la plantilla de asientos.');
       return;
     }
+    setAmenidadesDiff(huboAmenidadesDiff);
     setConfirmDiff(diff);
   }
 
@@ -54,8 +75,12 @@ export default function BusAsientosPage() {
     setConfirmDiff(null);
     setSaving(true);
     try {
-      const resultado = await asientoRepository.syncTemplate(bus.id, draft);
+      const [resultado] = await Promise.all([
+        asientoRepository.syncTemplate(bus.id, draft),
+        amenidadesDiff ? amenidadRepository.replaceForBus(bus.id, draftAmenidades) : Promise.resolve(null),
+      ]);
       setAsientos(await asientoRepository.listByBus(bus.id));
+      if (amenidadesDiff) setAmenidades(await amenidadRepository.listByBus(bus.id));
 
       if (resultado.eliminacionesFallidas.length > 0) {
         toast.warning(
@@ -63,7 +88,7 @@ export default function BusAsientosPage() {
         );
       } else {
         toast.success(
-          `Plantilla actualizada: ${resultado.creados} creado(s), ${resultado.actualizados} actualizado(s), ${resultado.eliminados} eliminado(s).`
+          `Plantilla actualizada: ${resultado.creados} creado(s), ${resultado.actualizados} actualizado(s), ${resultado.eliminados} eliminado(s)${amenidadesDiff ? ', amenidades actualizadas' : ''}.`
         );
       }
     } catch (e) {
@@ -104,7 +129,8 @@ export default function BusAsientosPage() {
         <BusSeatMapEditor
           cantidadPisos={bus.cantidadPisos}
           initialAsientos={asientos}
-          onChange={setDraft}
+          initialAmenidades={amenidades}
+          onChange={(seats, am) => { setDraft(seats); setDraftAmenidades(am); }}
         />
       </div>
 
@@ -118,7 +144,8 @@ export default function BusAsientosPage() {
                 <span className="mt-2 block text-neutral-700">
                   {confirmDiff.crear > 0 && <>Se crearán <strong>{confirmDiff.crear}</strong> asiento(s) nuevo(s). </>}
                   {confirmDiff.actualizar > 0 && <>Se actualizarán <strong>{confirmDiff.actualizar}</strong> asiento(s). </>}
-                  {confirmDiff.eliminar > 0 && <>Se eliminarán <strong>{confirmDiff.eliminar}</strong> asiento(s) (los que tengan boletos vendidos no se podrán eliminar).</>}
+                  {confirmDiff.eliminar > 0 && <>Se eliminarán <strong>{confirmDiff.eliminar}</strong> asiento(s) (los que tengan boletos vendidos no se podrán eliminar). </>}
+                  {amenidadesDiff && <>Se actualizarán las amenidades (TV, baño, escaleras, cafetera) del plano.</>}
                 </span>
               )}
             </AlertDialogDescription>
