@@ -81,8 +81,10 @@ export default function TerminalesPage() {
     try {
       if (modal === 'create') {
         await terminalRepository.create(form);
+        toast.success('Terminal creado correctamente.', { duration: 3000 });
       } else if (modal === 'edit' && editing) {
         await terminalRepository.update(editing.id, form);
+        toast.success('Terminal actualizado correctamente.', { duration: 3000 });
       }
       setModal(null);
       refetch();
