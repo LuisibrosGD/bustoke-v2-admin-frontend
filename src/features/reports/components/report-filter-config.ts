@@ -44,7 +44,7 @@ export const REPORT_FILTERS: Record<ReportFilterKey, ReportFilterDefinition> = {
     placeholder: 'Selecciona un estado',
     options: [
       { value: 'programado', label: 'Programado' },
-      { value: 'encurso', label: 'En curso' },
+      { value: 'en_curso', label: 'En curso' },
       { value: 'finalizado', label: 'Finalizado' },
       { value: 'cancelado', label: 'Cancelado' },
     ],
