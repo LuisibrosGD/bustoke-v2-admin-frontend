@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   Button,
   Input,
@@ -11,8 +12,32 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui';
+import { useUserRole } from '@/hooks';
+import { agenciaRepository } from '@/infrastructure/repositories';
+
+const PLATAFORMA = { nombre: 'Bustoke S.A.C.', ruc: '20123456789' };
 
 export default function ConfiguracionPage() {
+  const { isSuperadmin, idAgencia, isLoading: userLoading } = useUserRole();
+  const [empresa, setEmpresa] = useState(PLATAFORMA);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (userLoading) return;
+    if (isSuperadmin || !idAgencia) {
+      setEmpresa(PLATAFORMA);
+      setLoading(false);
+      return;
+    }
+    agenciaRepository
+      .getById(idAgencia)
+      .then((a) => {
+        if (a) setEmpresa({ nombre: a.razonSocial, ruc: a.ruc });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [isSuperadmin, idAgencia, userLoading]);
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-6">
@@ -39,11 +64,11 @@ export default function ConfiguracionPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="nombre">Nombre de la empresa</Label>
-                <Input id="nombre" value="Bustoke S.A.C." disabled />
+                <Input id="nombre" value={loading ? 'Cargando...' : empresa.nombre} disabled />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ruc">RUC</Label>
-                <Input id="ruc" value="20123456789" disabled />
+                <Input id="ruc" value={loading ? '' : empresa.ruc} disabled />
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
