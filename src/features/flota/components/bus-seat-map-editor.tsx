@@ -6,6 +6,7 @@ import {
   Coffee,
   Crown,
   Footprints,
+  Info,
   Minus,
   PenLine,
   Plus,
@@ -14,7 +15,7 @@ import {
   Tv,
   X as XIcon,
 } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui';
 import type { Amenidad, Asiento, TipoAmenidad, TipoServicio } from '@/infrastructure/domain/types';
 
 const MIN_ROWS = 3;
@@ -448,6 +449,20 @@ export function BusSeatMapEditor({ cantidadPisos, initialAsientos = [], initialA
         <Button type="button" size="sm" variant={tool.kind === 'renombrar' ? 'default' : 'outline'} onClick={() => setTool({ kind: 'renombrar' })}>
           <PenLine className="size-3.5" /> Renombrar
         </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="ml-1 flex size-6 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-200 hover:text-neutral-600 transition-colors"
+              aria-label="Ayuda del editor"
+            >
+              <Info className="size-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Click en una celda para aplicar la herramienta seleccionada. Para cambiar el número de un asiento, usá la herramienta &quot;Renombrar&quot; y hacé click en el asiento.
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <div className={cantidadPisos === 2 ? 'grid grid-cols-1 gap-6 lg:grid-cols-2' : ''}>
@@ -465,10 +480,6 @@ export function BusSeatMapEditor({ cantidadPisos, initialAsientos = [], initialA
           />
         ))}
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        Click en una celda para aplicar la herramienta seleccionada. Para cambiar el número de un asiento, usá la herramienta &quot;Renombrar&quot; y hacé click en el asiento.
-      </p>
     </div>
   );
 }
