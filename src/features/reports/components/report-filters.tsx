@@ -5,17 +5,31 @@ import { Button, Input } from '@/components/ui';
 import { PATHS } from '@/lib/constants/paths';
 import { SearchIcon, XIcon } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ReportQuery } from '../domain';
 import {
   REPORT_FILTER_KEYS_BY_SLUG,
   REPORT_FILTERS,
   ReportFilterKey,
 } from './report-filter-config';
+import { ReportCheckboxFilter } from './report-checkbox-filter';
+import { ReportRutaMultiFilter } from './report-ruta-multi-filter';
 import { busRepository, rutaRepository } from '@/infrastructure/repositories';
 import type { ComboboxOption } from '@/types/common.types';
+import type { Ruta } from '@/infrastructure/domain/types';
 
-const MULTI_SELECT_KEYS: ReportFilterKey[] = ['rutaId', 'busId', 'estadoPago', 'metodoPago', 'canalVenta'];
+// Claves cuyo valor se maneja como arreglo (aunque en la URL viaje como
+// string separado por comas): comparten el mismo parseo inicial sin
+// importar con qué widget se rendericen.
+const ARRAY_VALUE_KEYS: ReportFilterKey[] = ['rutaId', 'busId', 'estadoPago', 'metodoPago', 'canalVenta', 'estadoViaje'];
+
+// Diseño Propuesto 2: lista de checkboxes siempre visible, sin reabrir el
+// dropdown por cada opción.
+const CHECKBOX_FILTER_KEYS: ReportFilterKey[] = ['estadoPago', 'metodoPago', 'estadoViaje', 'busId'];
+
+// Diseño Propuesto 1 (selector de ruta por pares origen→destino): solo en
+// los reportes donde el documento lo pidió explícitamente.
+const RUTA_MULTI_FILTER_SLUGS = new Set(['ventas', 'viajes']);
 
 interface ReportFiltersProps {
   query: ReportQuery;
@@ -25,21 +39,14 @@ interface ReportFiltersProps {
 }
 
 export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId }: ReportFiltersProps) {
-  const [rutaOptions, setRutaOptions] = useState<ComboboxOption[]>([]);
+  const [rutas, setRutas] = useState<Ruta[]>([]);
   const [busOptions, setBusOptions] = useState<ComboboxOption[]>([]);
 
   useEffect(() => {
     if (!userAgenciaId) return;
     rutaRepository.findByAgencia(userAgenciaId)
-      .then((rutas) => {
-        setRutaOptions(
-          rutas.map((r) => {
-            const label = [r.terminalOrigenNombre, r.terminalDestinoNombre].filter(Boolean).join(' → ') || `Ruta ${r.id}`;
-            return { value: String(r.id), label };
-          })
-        );
-      })
-      .catch(() => setRutaOptions([]));
+      .then(setRutas)
+      .catch(() => setRutas([]));
   }, [userAgenciaId]);
 
   useEffect(() => {
@@ -53,6 +60,15 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
       .catch(() => setBusOptions([]));
   }, [userAgenciaId]);
 
+  const rutaOptions = useMemo(
+    () =>
+      rutas.map((r) => ({
+        value: String(r.id),
+        label: [r.terminalOrigenNombre, r.terminalDestinoNombre].filter(Boolean).join(' → ') || `Ruta ${r.id}`,
+      })),
+    [rutas]
+  );
+
   const filterKeys = (REPORT_FILTER_KEYS_BY_SLUG[slug] ?? []).filter(
     (key) => key !== 'agenciaId' || isSuperAdmin
   );
@@ -62,7 +78,7 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
   >(() =>
     filterKeys.reduce<Partial<Record<ReportFilterKey, string | string[]>>>((acc, key) => {
       const raw = query[key];
-      if (MULTI_SELECT_KEYS.includes(key)) {
+      if (ARRAY_VALUE_KEYS.includes(key)) {
         acc[key] = raw ? raw.split(',').filter(Boolean) : [];
       } else {
         acc[key] = raw ?? '';
@@ -88,16 +104,45 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
         </label>
         {filterKeys.map((key) => {
           const filter = REPORT_FILTERS[key];
-          const options = key === 'rutaId' && rutaOptions.length > 0
-            ? rutaOptions
-            : key === 'busId' && busOptions.length > 0
-            ? busOptions
-            : filter.options ?? [];
-          const isMulti = MULTI_SELECT_KEYS.includes(key);
           const currentValue = comboboxValues[key];
+          const currentArray = Array.isArray(currentValue) ? currentValue : [];
+
+          if (key === 'rutaId' && RUTA_MULTI_FILTER_SLUGS.has(slug)) {
+            return (
+              <div key={key} className="space-y-1.5 text-sm font-medium sm:col-span-2 lg:col-span-3">
+                <label className="block">{filter.label}</label>
+                <ReportRutaMultiFilter
+                  rutas={rutas}
+                  value={currentArray}
+                  onChange={(val) => setComboboxValues((current) => ({ ...current, [key]: val }))}
+                />
+                <input type="hidden" name={filter.key} value={currentArray.join(',')} />
+              </div>
+            );
+          }
+
+          if (CHECKBOX_FILTER_KEYS.includes(key)) {
+            const options = key === 'busId' ? busOptions : filter.options ?? [];
+            return (
+              <div key={key} className="space-y-1.5 text-sm font-medium">
+                <label htmlFor={`report-filter-${key}`} className="block">
+                  {filter.label}
+                </label>
+                <ReportCheckboxFilter
+                  id={`report-filter-${key}`}
+                  options={options}
+                  value={currentArray}
+                  onChange={(val) => setComboboxValues((current) => ({ ...current, [key]: val }))}
+                />
+                <input type="hidden" name={filter.key} value={currentArray.join(',')} />
+              </div>
+            );
+          }
+
+          const options = key === 'rutaId' && rutaOptions.length > 0 ? rutaOptions : filter.options ?? [];
+          const isMulti = ARRAY_VALUE_KEYS.includes(key);
 
           if (isMulti && options) {
-            const arr = Array.isArray(currentValue) ? currentValue : [];
             return (
               <div key={key} className="space-y-1.5 text-sm font-medium">
                 <label htmlFor={`report-filter-${key}`} className="block">
@@ -105,9 +150,9 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
                 </label>
                 <GlobalComboboxMultiple
                   id={`report-filter-${key}`}
-                  key={key === 'rutaId' ? `rutaId-${rutaOptions.length}` : key === 'busId' ? `busId-${busOptions.length}` : key}
+                  key={key === 'rutaId' ? `rutaId-${rutaOptions.length}` : key}
                   items={options}
-                  value={arr}
+                  value={currentArray}
                   onChange={(val) =>
                     setComboboxValues((current) => ({
                       ...current,
@@ -118,7 +163,7 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
                 <input
                   type="hidden"
                   name={filter.key}
-                  value={arr.join(',')}
+                  value={currentArray.join(',')}
                 />
               </div>
             );
@@ -133,7 +178,6 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
                 <>
                   <GlobalCombobox
                     id={`report-filter-${key}`}
-                    key={key === 'busId' ? `busId-${busOptions.length}` : key}
                     items={options}
                     value={typeof currentValue === 'string' ? currentValue : ''}
                     onChange={(value) =>
