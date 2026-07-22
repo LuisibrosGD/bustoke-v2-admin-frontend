@@ -17,6 +17,7 @@ type BackendAuthResponse = {
   rol?: string;
   idUsuario?: number;
   idAgencia?: number;
+  nombre?: string;
   user?: {
     id?: string;
     email?: string;
@@ -53,7 +54,7 @@ function mapAuthResponseToToken(token: JWT, data: BackendAuthResponse): JWT {
     ...token,
     id: data.user?.id ?? decoded?.sub,
     email: data.user?.email ?? decoded?.email,
-    name: data.user?.name ?? decoded?.name,
+    name: data.user?.name ?? data.nombre ?? decoded?.name,
     role: data.user?.role ?? data.rol ?? decoded?.rol ?? decoded?.role,
     avatarUrl: data.user?.avatarUrl ?? decoded?.avatarUrl,
     accessToken: data.accessToken,
@@ -141,7 +142,7 @@ export const authOptions: NextAuthOptions = {
             sessionId: data.sessionId,
             email: data.user?.email ?? payload.email,
             id: data.user?.id ?? payload.sub,
-            name: data.user?.name ?? payload.name,
+            name: data.user?.name ?? data.nombre ?? payload.name,
             role: data.user?.role ?? data.rol ?? payload.rol ?? payload.role,
             avatarUrl: data.user?.avatarUrl ?? payload.avatarUrl,
           };

@@ -11,8 +11,8 @@ import { GlobalSearch } from './global-search';
 
 const ROLE_LABEL: Record<string, string> = {
   superadmin: 'Superadmin',
-  admin_agencia: 'Admin agencia',
-  admin_terminal: 'Admin terminal',
+  admin_agencia: 'Administrador de Agencia',
+  admin_terminal: 'Administrador de Terminal',
 };
 
 export function DashboardHeader() {
