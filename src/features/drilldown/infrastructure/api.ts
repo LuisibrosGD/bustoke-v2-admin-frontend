@@ -7,7 +7,13 @@ async function get<T>(path: string, token?: string, params?: Record<string, stri
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API_PREFIX}${path}${query}`, { headers });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    const detail = body && typeof body === 'object' && typeof (body as { detail?: unknown }).detail === 'string'
+      ? (body as { detail: string }).detail
+      : null;
+    throw new Error(detail ?? `API error: ${res.status} ${res.statusText}`);
+  }
   return res.json();
 }
 

@@ -1,15 +1,5 @@
 import type { Plan } from '@/infrastructure/domain/types';
-
-const API = '/api';
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  return res.json();
-}
+import { request } from '@/lib/http/api-request';
 
 export class PlanRepository {
   async list(): Promise<Plan[]> {
@@ -35,7 +25,7 @@ export class PlanRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await fetch(`${API}/admin/planes/${id}`, { method: 'DELETE' });
+    await request<void>(`/admin/planes/${id}`, { method: 'DELETE' });
   }
 }
 

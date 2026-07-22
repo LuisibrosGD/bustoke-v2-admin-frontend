@@ -1,17 +1,8 @@
-const API = '/api';
+import { request } from '@/lib/http/api-request';
 
 export interface UsuarioEmail {
   idUsuario: number;
   email: string;
-}
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  return res.json();
 }
 
 export class UsuarioRepository {

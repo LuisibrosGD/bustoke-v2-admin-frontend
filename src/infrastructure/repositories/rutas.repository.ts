@@ -1,15 +1,5 @@
 import type { Ruta } from '@/infrastructure/domain/types';
-
-const API = '/api';
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  return res.json();
-}
+import { request } from '@/lib/http/api-request';
 
 export class RutaRepository {
   async list(params?: Record<string, string>): Promise<Ruta[]> {

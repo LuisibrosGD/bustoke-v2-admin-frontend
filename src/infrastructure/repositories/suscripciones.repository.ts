@@ -1,15 +1,5 @@
 import type { Suscripcion } from '@/infrastructure/domain/types';
-
-const API = '/api';
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  return res.json();
-}
+import { request } from '@/lib/http/api-request';
 
 export class SuscripcionRepository {
   async list(params?: Record<string, string>): Promise<Suscripcion[]> {
@@ -36,7 +26,7 @@ export class SuscripcionRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    await fetch(`${API}/admin/suscripciones/${id}`, { method: 'DELETE' });
+    await request<void>(`/admin/suscripciones/${id}`, { method: 'DELETE' });
     return true;
   }
 }

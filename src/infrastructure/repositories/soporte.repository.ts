@@ -1,15 +1,5 @@
 import type { TicketSoporte } from '@/infrastructure/domain/types';
-
-const API = '/api';
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  return res.json();
-}
+import { request } from '@/lib/http/api-request';
 
 export class SoporteRepository {
   async list(params?: Record<string, string>): Promise<TicketSoporte[]> {
@@ -36,7 +26,7 @@ export class SoporteRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    await fetch(`${API}/admin/soporte/${id}`, { method: 'DELETE' });
+    await request<void>(`/admin/soporte/${id}`, { method: 'DELETE' });
     return true;
   }
 }

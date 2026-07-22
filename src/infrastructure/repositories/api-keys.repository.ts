@@ -1,15 +1,5 @@
 import type { ApiKey } from '@/infrastructure/domain/types';
-
-const API = '/api';
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  return res.json();
-}
+import { request } from '@/lib/http/api-request';
 
 export class ApiKeyRepository {
   async list(params?: Record<string, string>): Promise<ApiKey[]> {
@@ -25,7 +15,7 @@ export class ApiKeyRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await fetch(`${API}/admin/api-keys/${id}`, { method: 'DELETE' });
+    await request<void>(`/admin/api-keys/${id}`, { method: 'DELETE' });
   }
 }
 

@@ -1,15 +1,5 @@
 import type { TarifaRuta } from '@/infrastructure/domain/types';
-
-const API = '/api';
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
-  return res.json();
-}
+import { request } from '@/lib/http/api-request';
 
 export class TarifaRepository {
   async listByRuta(rutaId: string): Promise<TarifaRuta[]> {
@@ -31,7 +21,7 @@ export class TarifaRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await fetch(`${API}/admin/rutas/tarifas/${id}`, { method: 'DELETE' });
+    await request<void>(`/admin/rutas/tarifas/${id}`, { method: 'DELETE' });
   }
 }
 
