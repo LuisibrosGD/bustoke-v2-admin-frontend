@@ -35,7 +35,7 @@ export function ReportFilters({ query, slug, isSuperAdmin = false, userAgenciaId
         setRutaOptions(
           rutas.map((r) => {
             const label = [r.terminalOrigenNombre, r.terminalDestinoNombre].filter(Boolean).join(' → ') || `Ruta ${r.id}`;
-            return { value: r.id, label };
+            return { value: String(r.id), label };
           })
         );
       })
