@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,6 +25,15 @@ import { PasswordInput } from './password-input';
 export function SignInForm() {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
+  // El botón queda deshabilitado hasta que React termine de hidratar y
+  // enganchar el onSubmit: si el usuario alcanza a clickear antes de eso
+  // (dispositivos/conexiones lentas), el <form> sin handler cae al submit
+  // nativo del navegador — un GET a esta misma URL con el email y la
+  // contraseña como query params, visibles en el historial y en logs.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const { openDialog, closeDialog } = useAlertDialogStore();
   const form = useForm<SignInFormSchema>({
     resolver: zodResolver(signInFormSchema),
@@ -115,6 +124,7 @@ export function SignInForm() {
             type="submit"
             className="w-full md:h-12 md:text-base xl:h-10 xl:text-sm"
             isLoading={isPending}
+            disabled={!mounted}
           >
             Iniciar Sesión
           </LoadingButton>

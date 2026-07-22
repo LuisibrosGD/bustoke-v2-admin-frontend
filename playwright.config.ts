@@ -4,7 +4,13 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 
-const BASE_URL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3000';
+// 'localhost' y no '127.0.0.1': con la IP literal, el websocket de HMR del
+// dev server de Next falla el handshake (ERR_INVALID_HTTP_RESPONSE) y la
+// app nunca termina de hidratar en el navegador — probablemente por el
+// NEXTAUTH_URL=http://localhost:3000 configurado. Sin hidratar, el <form>
+// de login cae al submit nativo del navegador (GET con el email/password
+// como query params), que es justo lo que hacía fallar esta suite.
+const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 
 export default defineConfig({
   testDir: './e2e',
