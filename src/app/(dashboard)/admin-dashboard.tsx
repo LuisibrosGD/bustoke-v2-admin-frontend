@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -14,11 +15,12 @@ import {
 } from '@/components/ui';
 import { cn } from '@/lib/utils/style';
 import { useUserRole } from '@/hooks';
+import { PATHS } from '@/lib/constants/paths';
 
 interface KPI {
   title: string; value: string; subtitle: string;
   icon: React.ComponentType<{ className?: string }>;
-  bg: string; text: string;
+  bg: string; text: string; href: string;
 }
 
 interface DashboardData {
@@ -31,12 +33,12 @@ interface DashboardData {
 }
 
 const KPI_STYLES = [
-  { icon: MapPin, bg: 'bg-blue-50', text: 'text-blue-600' },
-  { icon: Bus, bg: 'bg-emerald-50', text: 'text-emerald-600' },
-  { icon: Route, bg: 'bg-purple-50', text: 'text-purple-600' },
-  { icon: Map, bg: 'bg-amber-50', text: 'text-amber-600' },
-  { icon: Users, bg: 'bg-cyan-50', text: 'text-cyan-600' },
-  { icon: CircleDollarSign, bg: 'bg-rose-50', text: 'text-rose-600' },
+  { icon: MapPin, bg: 'bg-blue-50', text: 'text-blue-600', href: PATHS.terminalesPage },
+  { icon: Bus, bg: 'bg-emerald-50', text: 'text-emerald-600', href: PATHS.flotaPage },
+  { icon: Route, bg: 'bg-purple-50', text: 'text-purple-600', href: PATHS.rutasPage },
+  { icon: Map, bg: 'bg-amber-50', text: 'text-amber-600', href: PATHS.viajesPage },
+  { icon: Users, bg: 'bg-cyan-50', text: 'text-cyan-600', href: PATHS.pasajerosPage },
+  { icon: CircleDollarSign, bg: 'bg-green-50', text: 'text-green-600', href: PATHS.reportDetailPage('financiero') },
 ];
 
 const alertIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -67,7 +69,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/admin/dashboard/', {
+    fetch('/api/admin/dashboard', {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
@@ -117,6 +119,7 @@ export default function AdminDashboard() {
     icon: KPI_STYLES[i]?.icon ?? Building2,
     bg: KPI_STYLES[i]?.bg ?? 'bg-neutral-50',
     text: KPI_STYLES[i]?.text ?? 'text-neutral-600',
+    href: KPI_STYLES[i]?.href ?? PATHS.dashboardPage,
   }));
 
   const monthlyTrips = data?.monthlyTrips ?? [];
@@ -141,8 +144,9 @@ export default function AdminDashboard() {
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
-            <div
+            <Link
               key={kpi.title}
+              href={kpi.href}
               className="group relative overflow-hidden rounded-xl border border-neutral-200/60 bg-white p-5 shadow-sm transition-all hover:shadow-md hover:border-neutral-300"
             >
               <div className="flex items-start justify-between">
@@ -156,7 +160,7 @@ export default function AdminDashboard() {
                 <p className={cn('mt-1 text-2xl font-bold tracking-tight', kpi.text)}>{kpi.value}</p>
                 <p className="mt-1 text-xs text-neutral-400">{kpi.subtitle}</p>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
