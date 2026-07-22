@@ -26,7 +26,8 @@ export function BoletosTable() {
 
   const [search, setSearch] = useState('');
   const [estado, setEstado] = useState('');
-  const [rutaId, setRutaId] = useState('');
+  const [origenId, setOrigenId] = useState('');
+  const [destinoId, setDestinoId] = useState('');
   const [fecha, setFecha] = useState<DateRange | undefined>();
 
   useEffect(() => {
@@ -60,6 +61,40 @@ export function BoletosTable() {
   const columns = useBoletosColumns(pasajeros, viajes, rutas);
   const viajesMap = useMemo(() => new Map(viajes.map((v) => [v.id, v])), [viajes]);
 
+  const origenOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of rutas) {
+      const id = String(r.idTerminalOrigen ?? '');
+      if (id && !map.has(id)) {
+        map.set(id, r.terminalOrigenNombre ?? id);
+      }
+    }
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [rutas]);
+
+  const destinoOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of rutas) {
+      if (origenId && String(r.idTerminalOrigen) !== origenId) continue;
+      const id = String(r.idTerminalDestino ?? '');
+      if (id && !map.has(id)) {
+        map.set(id, r.terminalDestinoNombre ?? id);
+      }
+    }
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [rutas, origenId]);
+
+  const rutaIdsFiltradas = useMemo(() => {
+    if (!origenId && !destinoId) return null;
+    const set = new Set<string>();
+    for (const r of rutas) {
+      if (origenId && String(r.idTerminalOrigen) !== origenId) continue;
+      if (destinoId && String(r.idTerminalDestino) !== destinoId) continue;
+      set.add(String(r.id));
+    }
+    return set;
+  }, [rutas, origenId, destinoId]);
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     const desde = fecha?.from ? new Date(fecha.from.getFullYear(), fecha.from.getMonth(), fecha.from.getDate()) : null;
@@ -70,7 +105,7 @@ export function BoletosTable() {
       if (estado && b.estado !== estado) return false;
 
       const viaje = viajesMap.get(b.idViaje);
-      if (rutaId && viaje?.idRuta !== rutaId) return false;
+      if (rutaIdsFiltradas && (!viaje || !rutaIdsFiltradas.has(String(viaje.idRuta)))) return false;
 
       if (desde || hasta) {
         if (!viaje) return false;
@@ -80,16 +115,17 @@ export function BoletosTable() {
       }
       return true;
     });
-  }, [data, search, estado, rutaId, fecha, viajesMap]);
+  }, [data, search, estado, rutaIdsFiltradas, fecha, viajesMap]);
 
   const pagination = useClientPagination(filtered, 15);
 
-  const hasFilters = !!(search || estado || rutaId || fecha?.from);
+  const hasFilters = !!(search || estado || origenId || destinoId || fecha?.from);
 
   function clearFilters() {
     setSearch('');
     setEstado('');
-    setRutaId('');
+    setOrigenId('');
+    setDestinoId('');
     setFecha(undefined);
     pagination.resetPage();
   }
@@ -131,14 +167,23 @@ export function BoletosTable() {
 
         <select
           className={selectClass}
-          value={rutaId}
-          onChange={(e) => { setRutaId(e.target.value); pagination.resetPage(); }}
+          value={origenId}
+          onChange={(e) => { setOrigenId(e.target.value); setDestinoId(''); pagination.resetPage(); }}
         >
-          <option value="">Todas las rutas</option>
-          {rutas.map((r) => (
-            <option key={r.id} value={r.id}>
-              {(r.terminalOrigenNombre ?? '?')} → {(r.terminalDestinoNombre ?? '?')}
-            </option>
+          <option value="">Origen (todos)</option>
+          {origenOptions.map(([id, nombre]) => (
+            <option key={id} value={id}>{nombre}</option>
+          ))}
+        </select>
+
+        <select
+          className={selectClass}
+          value={destinoId}
+          onChange={(e) => { setDestinoId(e.target.value); pagination.resetPage(); }}
+        >
+          <option value="">Destino (todos)</option>
+          {destinoOptions.map(([id, nombre]) => (
+            <option key={id} value={id}>{nombre}</option>
           ))}
         </select>
 
