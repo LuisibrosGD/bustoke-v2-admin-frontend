@@ -2,10 +2,14 @@
 
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Armchair, Bus, Sofa, Crown, Lock, Unlock } from 'lucide-react';
+import { Armchair, Bus, Sofa, Crown, Lock, Unlock, DoorOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge/badge';
 import { asientoRepository, boletoRepository, busRepository, viajeRepository } from '@/infrastructure/repositories';
 import type { Asiento, Boleto, Bus as BusType, Viaje } from '@/infrastructure/domain/types';
+
+const MIN_FILAS = 4;
+const MAX_FILAS = 12;
+const DEFAULT_FILAS = 10;
 
 const tipoServicioIcon: Record<string, typeof Armchair> = {
   normal: Sofa,
@@ -35,40 +39,87 @@ function getAsientoEstado(asiento: Asiento, asientosOcupados: Set<string>): stri
   return 'disponible';
 }
 
-function SeatCard({ asiento, row, col, asientosOcupados, onToggle }: { asiento: Asiento; row: number; col: number; asientosOcupados: Set<string>; onToggle: (asiento: Asiento) => void }) {
-  const estado = getAsientoEstado(asiento, asientosOcupados);
+// Misma fórmula que src/features/flota/components/bus-seat-map-editor.tsx:
+// la altura del contenedor está calibrada para que las filas (10 + fila*9)
+// queden bien espaciadas, así que hay que estimar la cantidad de filas
+// reales del piso para reproducir esas proporciones.
+function inferFilas(seatsDelPiso: Asiento[]): number {
+  if (seatsDelPiso.length === 0) return DEFAULT_FILAS;
+  const maxLetra = seatsDelPiso.reduce((max, s) => (s.fila > max ? s.fila : max), 'A');
+  return Math.min(MAX_FILAS, Math.max(MIN_FILAS, maxLetra.charCodeAt(0) - 65 + 1));
+}
+
+function SeatCard({ asiento, estado, onToggle }: { asiento: Asiento; estado: string; onToggle: (asiento: Asiento) => void }) {
   const Icon = tipoServicioIcon[asiento.tipoServicio] ?? Armchair;
   const bloqueado = estado === 'mantenimiento';
+  const ocupado = estado === 'ocupado';
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div
-        data-seat-id={asiento.id}
-        data-row={row}
-        data-col={col}
-        data-piso={asiento.piso}
-        data-tipo-servicio={asiento.tipoServicio}
-        data-estado={estado}
-        className={`flex flex-col items-center justify-center gap-1 size-14 rounded-xl border text-xs font-medium transition-colors cursor-pointer ${estadoStyle[estado]} relative group`}
-        title={`${asiento.numeroAsiento} — ${tipoServicioLabel[asiento.tipoServicio]} — ${estadoLabel[estado]}`}
-        onClick={() => onToggle(asiento)}
-      >
-        <Icon className="size-5" />
-        <span className="leading-none">{asiento.numeroAsiento}</span>
-        {estado !== 'ocupado' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
-            {bloqueado ? <Unlock className="size-5 text-white" /> : <Lock className="size-5 text-white" />}
-          </div>
-        )}
-      </div>
-      {estado !== 'ocupado' && (
-        <button
-          className="text-[10px] text-neutral-400 hover:text-neutral-700 transition-colors"
-          onClick={() => onToggle(asiento)}
-        >
-          {bloqueado ? 'Desbloquear' : 'Bloquear'}
-        </button>
+    <button
+      type="button"
+      data-seat-id={asiento.id}
+      data-piso={asiento.piso}
+      data-tipo-servicio={asiento.tipoServicio}
+      data-estado={estado}
+      style={{ left: `${asiento.coordX}%`, top: `${asiento.coordY}%` }}
+      className={`absolute flex -translate-x-1/2 -translate-y-1/2 size-11 flex-col items-center justify-center gap-0.5 rounded-lg border text-[10px] font-medium transition-colors ${estadoStyle[estado]} ${ocupado ? '' : 'cursor-pointer'} group`}
+      title={`${asiento.numeroAsiento} — ${tipoServicioLabel[asiento.tipoServicio]} — ${estadoLabel[estado]}`}
+      onClick={() => !ocupado && onToggle(asiento)}
+      disabled={ocupado}
+    >
+      <Icon className="size-4" />
+      <span className="leading-none">{asiento.numeroAsiento}</span>
+      {!ocupado && (
+        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+          {bloqueado ? <Unlock className="size-4 text-white" /> : <Lock className="size-4 text-white" />}
+        </div>
       )}
+    </button>
+  );
+}
+
+function FloorMap({ piso, asientos, asientosOcupados, onToggle }: { piso: number; asientos: Asiento[]; asientosOcupados: Set<string>; onToggle: (asiento: Asiento) => void }) {
+  const filas = inferFilas(asientos);
+  const height = Math.max(360, filas * 48 + 110);
+
+  return (
+    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-base font-semibold text-neutral-900">
+          Piso {piso}
+          <span className="ml-2 text-sm font-normal text-neutral-400">({asientos.length} asientos)</span>
+        </h2>
+        <div className="flex items-center gap-3">
+          {(['normal', 'vip'] as const).map((tipo) => {
+            const Icon = tipoServicioIcon[tipo];
+            const count = asientos.filter((a) => a.tipoServicio === tipo).length;
+            if (count === 0) return null;
+            return (
+              <span key={tipo} className="flex items-center gap-1 text-xs text-neutral-500">
+                <Icon className="size-3.5" />
+                {count}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+
+      <div
+        className="relative mx-auto w-full max-w-[320px] rounded-2xl border-2 border-neutral-200 bg-neutral-50/40"
+        style={{ height }}
+      >
+        <div className="absolute left-1/2 top-[1%] flex -translate-x-1/2 items-center gap-1 rounded-md border border-neutral-200 bg-white px-2 py-1 text-[11px] font-medium text-neutral-500">
+          <DoorOpen className="size-3.5" /> Puerta
+        </div>
+        {asientos.map((asiento) => (
+          <SeatCard
+            key={asiento.id}
+            asiento={asiento}
+            estado={getAsientoEstado(asiento, asientosOcupados)}
+            onToggle={onToggle}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -165,37 +216,7 @@ export default function AsientosViajePage() {
       {[{ piso: 1, data: piso1 }, { piso: 2, data: piso2 }].map(({ piso, data }) => {
         if (data.length === 0) return null;
         return (
-          <div key={piso} className="bg-white rounded-xl border border-neutral-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-base font-semibold text-neutral-900">
-                Piso {piso}
-                <span className="ml-2 text-sm font-normal text-neutral-400">({data.length} asientos)</span>
-              </h2>
-              <div className="flex items-center gap-3">
-                {(['normal', 'vip'] as const).map((tipo) => {
-                  const Icon = tipoServicioIcon[tipo];
-                  const count = data.filter((a) => a.tipoServicio === tipo).length;
-                  if (count === 0) return null;
-                  return (
-                    <span key={tipo} className="flex items-center gap-1 text-xs text-neutral-500">
-                      <Icon className="size-3.5" />
-                      {count}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3 max-w-3xl mx-auto">
-              {data.map((asiento, idx) => {
-                const col = idx % 4;
-                const row = Math.floor(idx / 4);
-                return (
-                  <SeatCard key={asiento.id} asiento={asiento} row={row} col={col} asientosOcupados={asientosOcupados} onToggle={handleToggle} />
-                );
-              })}
-            </div>
-          </div>
+          <FloorMap key={piso} piso={piso} asientos={data} asientosOcupados={asientosOcupados} onToggle={handleToggle} />
         );
       })}
 
@@ -211,7 +232,7 @@ export default function AsientosViajePage() {
           </span>
           <span className="flex items-center gap-1.5">
             <Lock className="size-4 text-neutral-400" />
-            <span className="text-neutral-500">Hover para bloquear/desbloquear</span>
+            <span className="text-neutral-500">Click para bloquear/desbloquear (asientos libres)</span>
           </span>
         </div>
         <Badge variant="info">conectado a API</Badge>
