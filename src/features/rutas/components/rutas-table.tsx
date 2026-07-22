@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useUserRole } from '@/hooks';
+import { useUserRole, useClientPagination } from '@/hooks';
 import { useRutas } from '@/features/drilldown/application/use-entity-data';
 import { Input, Button, DataTable, DataTableEmpty, Skeleton } from '@/components/ui';
+import { DataTablePagination } from '@/components/ui/data-table/data-table-pagination';
 import { SearchIcon, XIcon, Eye, Pencil, Trash2 } from 'lucide-react';
 import { rutasColumns } from './rutas-columns';
 import type { Ruta } from '@/infrastructure/domain/types';
@@ -24,6 +25,7 @@ export function RutasTable({ onEdit, onDelete }: Props) {
     const l = search.toLowerCase();
     return data.filter((r) => (r.terminalOrigenNombre ?? r.idTerminalOrigen).toLowerCase().includes(l) || (r.terminalDestinoNombre ?? r.idTerminalDestino).toLowerCase().includes(l));
   }, [search, data]);
+  const pagination = useClientPagination(filtered, 15);
 
   const columnsWithActions = useMemo(() => [
     ...rutasColumns,
@@ -78,15 +80,31 @@ export function RutasTable({ onEdit, onDelete }: Props) {
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 p-4 border-b border-neutral-100">
           <div className="relative w-full sm:flex-1 sm:max-w-sm">
             <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
-            <Input placeholder="Buscar por origen o destino..." className="pl-9 border-neutral-200 bg-neutral-50/50 focus:bg-white" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="Buscar por origen o destino..." className="pl-9 border-neutral-200 bg-neutral-50/50 focus:bg-white" value={search} onChange={(e) => { setSearch(e.target.value); pagination.resetPage(); }} />
           </div>
           {search && <Button variant="ghost" size="sm" onClick={() => setSearch('')}><XIcon className="size-4 mr-1" /> Limpiar</Button>}
         </div>
         <DataTable
           columns={columnsWithActions}
-          data={filtered}
+          data={pagination.pageItems}
           emptyElement={<DataTableEmpty title="Sin resultados" description="No se encontraron rutas." />}
         />
+        {pagination.totalItems > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground px-4 pt-3 text-center sm:text-left">
+              Mostrando {pagination.pageItems.length} de {pagination.totalItems} rutas
+            </p>
+            {pagination.totalPages > 1 && (
+              <DataTablePagination
+                pageIndex={pagination.pageIndex}
+                totalPages={pagination.totalPages}
+                hasNextPage={pagination.hasNextPage}
+                hasPrevPage={pagination.hasPrevPage}
+                onPageChange={pagination.goToPage}
+              />
+            )}
+          </div>
+        )}
       </div>
 
     </>

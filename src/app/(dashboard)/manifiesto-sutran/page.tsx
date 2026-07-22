@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Eye } from 'lucide-react';
 import { Badge, Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
+import { DataTablePagination } from '@/components/ui/data-table/data-table-pagination';
+import { useClientPagination } from '@/hooks';
 import { manifiestoRepository } from '@/infrastructure/repositories';
 import type { ManifiestoDetalle, ManifiestoSutran } from '@/infrastructure/domain/types';
 
@@ -34,6 +36,7 @@ export default function ManifiestoSutranPage() {
       String(v).toLowerCase().includes(search.toLowerCase())
     )
   );
+  const pagination = useClientPagination(filtered, 15);
 
   async function abrirDetalle(id: string) {
     setDetalleLoading(true);
@@ -66,7 +69,7 @@ export default function ManifiestoSutranPage() {
             placeholder="Buscar manifiesto..."
             className="pl-9"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); pagination.resetPage(); }}
           />
         </div>
 
@@ -80,7 +83,7 @@ export default function ManifiestoSutranPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((m) => (
+            {pagination.pageItems.map((m) => (
               <TableRow key={m.id}>
                 <TableCell className="font-medium text-neutral-900">{m.idViaje}</TableCell>
                 <TableCell>{new Date(m.fechaGeneracion).toLocaleDateString('es-PE')}</TableCell>
@@ -103,6 +106,22 @@ export default function ManifiestoSutranPage() {
             )}
           </TableBody>
         </Table>
+        {pagination.totalItems > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground pt-3 text-center sm:text-left">
+              Mostrando {pagination.pageItems.length} de {pagination.totalItems} manifiestos
+            </p>
+            {pagination.totalPages > 1 && (
+              <DataTablePagination
+                pageIndex={pagination.pageIndex}
+                totalPages={pagination.totalPages}
+                hasNextPage={pagination.hasNextPage}
+                hasPrevPage={pagination.hasPrevPage}
+                onPageChange={pagination.goToPage}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       <Dialog open={!!selected} onOpenChange={(open) => { if (!open) setSelected(null); }}>

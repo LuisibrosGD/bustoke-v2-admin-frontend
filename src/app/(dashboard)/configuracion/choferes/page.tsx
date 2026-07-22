@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useUserRole } from '@/hooks';
+import { useUserRole, useClientPagination } from '@/hooks';
 import {
   Badge, Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Input, Label,
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
 } from '@/components/ui';
+import { DataTablePagination } from '@/components/ui/data-table/data-table-pagination';
 import { BulkUploadDialog } from '@/components/shared';
 import { uploadBulkDataAction } from '@/lib/actions/bulk-upload.actions';
 import { PencilIcon, Trash2, Plus, UploadIcon } from 'lucide-react';
@@ -59,6 +60,7 @@ export default function ChoferesPage() {
 
   const tiposMap = new Map(tiposDocumento.map((t) => [t.id, t]));
   const agenciasMap = new Map(agencias.map((a) => [a.id, a]));
+  const pagination = useClientPagination(data, 15);
 
   function openCreate() {
     setEditing(null);
@@ -181,7 +183,7 @@ export default function ChoferesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((c) => (
+            {pagination.pageItems.map((c) => (
               <TableRow key={c.id}>
                 <TableCell className="font-medium text-neutral-900">
                   {tiposMap.get(c.idTipoDocumento)?.nombre ?? ''} {c.numeroDocumento}
@@ -215,6 +217,22 @@ export default function ChoferesPage() {
             )}
           </TableBody>
         </Table>
+        {pagination.totalItems > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground pt-3 text-center sm:text-left">
+              Mostrando {pagination.pageItems.length} de {pagination.totalItems} choferes
+            </p>
+            {pagination.totalPages > 1 && (
+              <DataTablePagination
+                pageIndex={pagination.pageIndex}
+                totalPages={pagination.totalPages}
+                hasNextPage={pagination.hasNextPage}
+                hasPrevPage={pagination.hasPrevPage}
+                onPageChange={pagination.goToPage}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) resetDialog(); }}>

@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Badge, Button } from '@/components/ui';
+import { DataTablePagination } from '@/components/ui/data-table/data-table-pagination';
+import { useClientPagination } from '@/hooks';
 import { ArrowLeft, Edit, Bus, Building2, CalendarDays } from 'lucide-react';
 import { busRepository, agenciaRepository, viajeRepository, rutaRepository, terminalRepository, asientoRepository } from '@/infrastructure/repositories';
 import type { Asiento, Viaje, Bus as BusType, Agencia, Ruta, Terminal } from '@/infrastructure/domain/types';
@@ -59,6 +61,12 @@ export default function BusDetailPage() {
       }
     })();
   }, [params.id]);
+
+  const viajesOrdenados = useMemo(
+    () => [...viajes].sort((a, b) => new Date(b.fechaHoraSalida).getTime() - new Date(a.fechaHoraSalida).getTime()),
+    [viajes]
+  );
+  const pagination = useClientPagination(viajesOrdenados, 10);
 
   function rutaLabel(idRuta: string): string {
     const r = rutas.find((x) => x.id === idRuta);
@@ -137,7 +145,7 @@ export default function BusDetailPage() {
         <div className="px-6 py-4 border-b border-neutral-100">
           <div className="flex items-center gap-2">
             <CalendarDays className="size-5 text-neutral-500" />
-            <h2 className="text-base font-semibold text-neutral-900">Últimos Viajes</h2>
+            <h2 className="text-base font-semibold text-neutral-900">Historial de Viajes</h2>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -150,7 +158,7 @@ export default function BusDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {viajes.slice(-5).reverse().map((viaje) => (
+              {pagination.pageItems.map((viaje) => (
                 <tr key={viaje.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50 transition-colors">
                   <td className="px-6 py-3 text-neutral-900">
                     {new Date(viaje.fechaHoraSalida).toLocaleDateString('es-PE')}
@@ -177,6 +185,22 @@ export default function BusDetailPage() {
             </tbody>
           </table>
         </div>
+        {pagination.totalItems > 0 && (
+          <div className="px-6 pb-4">
+            <p className="text-xs text-muted-foreground pt-3 text-center sm:text-left">
+              Mostrando {pagination.pageItems.length} de {pagination.totalItems} viajes
+            </p>
+            {pagination.totalPages > 1 && (
+              <DataTablePagination
+                pageIndex={pagination.pageIndex}
+                totalPages={pagination.totalPages}
+                hasNextPage={pagination.hasNextPage}
+                hasPrevPage={pagination.hasPrevPage}
+                onPageChange={pagination.goToPage}
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
