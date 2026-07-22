@@ -37,6 +37,13 @@ const nextConfig: NextConfig = {
         destination: '/api/auth/:path*',
       },
       {
+        // Rutas de Next.js (route handlers) que no deben reescribirse al
+        // backend: sin esto, el catch-all de abajo las intercepta antes de
+        // que Next.js llegue a resolver la ruta dinamica /api/reports/[slug].
+        source: '/api/reports/:path*',
+        destination: '/api/reports/:path*',
+      },
+      {
         source: '/api/:path*',
         destination: `${process.env.NEXT_PUBLIC_URL_API || 'http://localhost:5000'}/:path*`,
       },
