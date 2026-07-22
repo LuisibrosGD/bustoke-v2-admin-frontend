@@ -6,8 +6,13 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button/button';
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
+} from '@/components/ui';
 import { BusSeatMapEditor, type SeatDraft } from '@/features/flota/components/bus-seat-map-editor';
 import { busRepository, asientoRepository } from '@/infrastructure/repositories';
+import type { TemplateDiff } from '@/infrastructure/repositories/asientos.repository';
 import type { Asiento, Bus } from '@/infrastructure/domain/types';
 
 export default function BusAsientosPage() {
@@ -17,6 +22,7 @@ export default function BusAsientosPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<SeatDraft[]>([]);
+  const [confirmDiff, setConfirmDiff] = useState<TemplateDiff | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -34,16 +40,36 @@ export default function BusAsientosPage() {
     })();
   }, [params.id]);
 
-  async function handleGuardar() {
+  function handleGuardarClick() {
+    const diff = asientoRepository.diffTemplate(asientos, draft);
+    if (diff.crear === 0 && diff.actualizar === 0 && diff.eliminar === 0) {
+      toast.info('No hay cambios en la plantilla de asientos.');
+      return;
+    }
+    setConfirmDiff(diff);
+  }
+
+  async function handleGuardarConfirmado() {
     if (!bus) return;
+    setConfirmDiff(null);
     setSaving(true);
     try {
-      await asientoRepository.replaceTemplate(bus.id, draft);
-      toast.success('Plantilla de asientos actualizada');
+      const resultado = await asientoRepository.syncTemplate(bus.id, draft);
+      setAsientos(await asientoRepository.listByBus(bus.id));
+
+      if (resultado.eliminacionesFallidas.length > 0) {
+        toast.warning(
+          `Plantilla actualizada, pero ${resultado.eliminacionesFallidas.length} asiento(s) no se pudieron eliminar porque ya tienen boletos vendidos: ${resultado.eliminacionesFallidas.map((f) => f.numeroAsiento).join(', ')}`
+        );
+      } else {
+        toast.success(
+          `Plantilla actualizada: ${resultado.creados} creado(s), ${resultado.actualizados} actualizado(s), ${resultado.eliminados} eliminado(s).`
+        );
+      }
     } catch (e) {
       toast.error(
         e instanceof Error
-          ? `No se pudo guardar todavía: ${e.message}`
+          ? `No se pudo guardar la plantilla: ${e.message}`
           : 'No se pudo guardar la plantilla de asientos'
       );
     } finally {
@@ -68,7 +94,7 @@ export default function BusAsientosPage() {
             <p className="text-sm text-muted-foreground">{bus.cantidadPisos} piso(s) · {asientos.length} asientos registrados actualmente</p>
           </div>
         </div>
-        <Button onClick={handleGuardar} disabled={saving}>
+        <Button onClick={handleGuardarClick} disabled={saving}>
           <Save className="size-4" />
           {saving ? 'Guardando...' : 'Guardar plantilla'}
         </Button>
@@ -81,6 +107,28 @@ export default function BusAsientosPage() {
           onChange={setDraft}
         />
       </div>
+
+      <AlertDialog open={!!confirmDiff} onOpenChange={(open) => { if (!open) setConfirmDiff(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Guardar cambios en la plantilla de asientos?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esto afecta el tipo de servicio (y por lo tanto la tarifa) de los asientos de este bus en los próximos viajes.
+              {confirmDiff && (
+                <span className="mt-2 block text-neutral-700">
+                  {confirmDiff.crear > 0 && <>Se crearán <strong>{confirmDiff.crear}</strong> asiento(s) nuevo(s). </>}
+                  {confirmDiff.actualizar > 0 && <>Se actualizarán <strong>{confirmDiff.actualizar}</strong> asiento(s). </>}
+                  {confirmDiff.eliminar > 0 && <>Se eliminarán <strong>{confirmDiff.eliminar}</strong> asiento(s) (los que tengan boletos vendidos no se podrán eliminar).</>}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGuardarConfirmado}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
