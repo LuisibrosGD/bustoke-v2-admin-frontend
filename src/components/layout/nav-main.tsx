@@ -55,20 +55,30 @@ function NavMain({ items }: NavMainProps) {
               key={item.title}
               asChild
               className="group/collapsible"
-              defaultOpen={childActive}
+              defaultOpen={childActive || active}
             >
               <SidebarMenuItem>
-                <CollapsibleTrigger asChild>
+                <div className="flex items-center">
                   <SidebarMenuButton
+                    asChild
                     tooltip={item.title}
-className="h-9 text-sm group-data-[collapsible=icon]:[&>svg]:size-6! data-[active=true]:!bg-sidebar-primary data-[active=true]:!text-sidebar-primary-foreground data-[active=true]:hover:!bg-sidebar-primary data-[active=true]:hover:!text-sidebar-primary-foreground"
-                     data-active={childActive}
-                   >
-                     {Icon && <Icon />}
-                     <span className="truncate">{item.title}</span>
-                     <ChevronRight className="ml-auto size-3.5 shrink-0 text-neutral-400 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    className="h-9 flex-1 text-sm group-data-[collapsible=icon]:[&>svg]:size-6! data-[active=true]:!bg-sidebar-primary data-[active=true]:!text-sidebar-primary-foreground data-[active=true]:hover:!bg-sidebar-primary data-[active=true]:hover:!text-sidebar-primary-foreground"
+                    data-active={childActive || active}
+                  >
+                    <Link href={item.url} onClick={handleNavClick}>
+                      {Icon && <Icon />}
+                      <span className="truncate">{item.title}</span>
+                    </Link>
                   </SidebarMenuButton>
-                </CollapsibleTrigger>
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex size-8 shrink-0 items-center justify-center rounded-md text-neutral-400 hover:bg-sidebar-accent hover:text-neutral-600 group-data-[collapsible=icon]:hidden"
+                    >
+                      <ChevronRight className="size-3.5 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </button>
+                  </CollapsibleTrigger>
+                </div>
                 <CollapsibleContent>
                   <SidebarMenuSub>
                     {item.children.map((subItem) => {
