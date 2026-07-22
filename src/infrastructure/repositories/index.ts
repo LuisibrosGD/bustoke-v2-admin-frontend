@@ -15,6 +15,7 @@ export { LiquidacionRepository, liquidacionRepository } from './liquidaciones.re
 export { ManifiestoRepository, manifiestoRepository } from './manifiestos.repository';
 export { TarifaRepository, tarifaRepository } from './tarifas.repository';
 export { AsientoRepository, asientoRepository } from './asientos.repository';
+export { AmenidadRepository, amenidadRepository } from './amenidades.repository';
 export { PlanRepository, planRepository } from './planes.repository';
 export { NotificacionRepository, notificacionRepository } from './notificaciones.repository';
 export { UbigeoRepository, ubigeoRepository } from './ubigeo.repository';

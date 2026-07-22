@@ -41,6 +41,8 @@ export type MetodoPago = 'yape' | 'plin' | 'tarjeta';
 export type EstadoPago = 'pendiente' | 'completado' | 'fallido' | 'reembolsado';
 export type EstadoAgencia = 'activa' | 'suspendida';
 export type TipoServicio = 'vip' | 'normal';
+
+export type TipoAmenidad = 'tv' | 'bano' | 'escaleras' | 'cafetera';
 export type EstadoViaje = 'programado' | 'en_curso' | 'finalizado' | 'cancelado';
 export type EstadoBoleto = 'activo' | 'cancelado';
 export type CanalVenta = 'app_bustoke' | 'ventanilla_fisica';
@@ -113,6 +115,15 @@ export type Asiento = {
   coordX: number;
   coordY: number;
   bloqueadoManual: boolean;
+};
+
+export type Amenidad = {
+  id: string;
+  idBus: string;
+  tipo: TipoAmenidad;
+  piso: number;
+  coordX: number;
+  coordY: number;
 };
 
 // --- Rutas ---
