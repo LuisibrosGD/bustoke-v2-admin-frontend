@@ -17,8 +17,8 @@ const COLUMN_TO_KEY: Record<string, Record<string, string>> = {
     AGENCIA: 'agencia',
     RUTA: 'ruta',
     'FECHA VIAJE': 'fechaViaje',
-    PASAJEROS: 'totalBoletos',
-    'MONTO TOTAL': 'totalVentas',
+    PASAJERO: 'pasajero',
+    MONTO: 'monto',
     COMISIÓN: 'comision',
   },
   viajes: {
@@ -39,10 +39,11 @@ const COLUMN_TO_KEY: Record<string, Record<string, string>> = {
   financiero: {
     AGENCIA: 'agencia',
     PERIODO: 'periodo',
-    'TOTAL VENTAS': 'totalVentas',
+    FECHA: 'fecha',
+    'N° BOLETO': 'idBoleto',
+    MONTO: 'monto',
     COMISIÓN: 'comision',
-    'NETO TRANSFERIR': 'netoTransferir',
-    BOLETOS: 'totalBoletos',
+    NETO: 'neto',
   },
 };
 
