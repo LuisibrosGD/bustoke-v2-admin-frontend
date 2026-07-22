@@ -16,8 +16,8 @@ type RolGestionable = 'superadmin' | 'admin_agencia' | 'admin_terminal';
 
 const ROL_LABEL: Record<string, string> = {
   superadmin: 'Superadmin',
-  admin_agencia: 'Admin agencia',
-  admin_terminal: 'Admin terminal',
+  admin_agencia: 'Administrador de Agencia',
+  admin_terminal: 'Administrador de Terminal',
 };
 
 const selectClass = 'flex h-9 w-full rounded-md border border-neutral-200 bg-white px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400';
@@ -332,8 +332,8 @@ export default function UsuariosPage() {
                   disabled={!isSuperadmin}
                 >
                   {isSuperadmin && <option value="superadmin">Superadmin</option>}
-                  {isSuperadmin && <option value="admin_agencia">Admin agencia</option>}
-                  <option value="admin_terminal">Admin terminal</option>
+                  {isSuperadmin && <option value="admin_agencia">Administrador de Agencia</option>}
+                  <option value="admin_terminal">Administrador de Terminal</option>
                 </select>
               </div>
               {isSuperadmin && rol !== 'superadmin' && (

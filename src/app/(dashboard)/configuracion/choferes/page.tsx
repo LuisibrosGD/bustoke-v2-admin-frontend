@@ -174,7 +174,8 @@ export default function ChoferesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Documento</TableHead>
+              <TableHead>Tipo de documento</TableHead>
+              <TableHead>Número de documento</TableHead>
               <TableHead>Nombres</TableHead>
               <TableHead>Apellidos</TableHead>
               {isSuperadmin && <TableHead>Agencia</TableHead>}
@@ -185,9 +186,8 @@ export default function ChoferesPage() {
           <TableBody>
             {pagination.pageItems.map((c) => (
               <TableRow key={c.id}>
-                <TableCell className="font-medium text-neutral-900">
-                  {tiposMap.get(c.idTipoDocumento)?.nombre ?? ''} {c.numeroDocumento}
-                </TableCell>
+                <TableCell className="text-neutral-700">{tiposMap.get(c.idTipoDocumento)?.nombre ?? ''}</TableCell>
+                <TableCell className="font-medium text-neutral-900">{c.numeroDocumento}</TableCell>
                 <TableCell>{c.nombres}</TableCell>
                 <TableCell>{c.apellidoPaterno} {c.apellidoMaterno}</TableCell>
                 {isSuperadmin && (
@@ -210,7 +210,7 @@ export default function ChoferesPage() {
             ))}
             {data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={isSuperadmin ? 6 : 5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={isSuperadmin ? 7 : 6} className="text-center py-8 text-muted-foreground">
                   No hay choferes registrados.
                 </TableCell>
               </TableRow>
